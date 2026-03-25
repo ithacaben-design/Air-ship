@@ -2,1112 +2,492 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Airship Afternoon</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>The Gamified Box</title>
     <style>
-        /* CORE LAYOUT */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background-color: #050505; 
+            font-family: 'Georgia', serif; 
+            -webkit-user-select: none; user-select: none;
+            touch-action: none;
         }
-
-        body, html {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background-color: #3e4a3d; /* Cool shade */
-            font-family: 'Lora', serif; /* Linen-esque readable font */
-        }
-
-        #game-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #e8dcc8; /* Warm afternoon linen fallback */
-        }
-
-        #vibe-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 2;
-            background: radial-gradient(circle at 70% 30%, rgba(255, 215, 120, 0.25) 0%, rgba(50, 70, 50, 0.4) 100%);
-            mix-blend-mode: hard-light;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            filter: sepia(0.15) contrast(1.05) brightness(1.05); /* Sunwarmed skin aesthetic */
-        }
-
-        /* UI OVERLAYS */
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; 
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            z-index: 10;
-        }
-
-        .screen {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(45, 55, 45, 0.5); /* Cool shade overlay */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            pointer-events: auto;
-            color: #f4efeb; /* Linen white */
-            text-align: center;
-            transition: opacity 0.5s ease-in-out;
-        }
-
-        .hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        h1 {
-            font-family: 'Caveat', cursive; /* Script font */
-            font-size: clamp(3rem, 10vw, 6rem);
-            margin-bottom: 5px;
-            color: #fdf5e6;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
-            letter-spacing: 2px;
-        }
-
-        .setup-panel {
-            background: rgba(244, 239, 235, 0.95); /* Linen */
-            padding: 25px;
-            border: 2px solid #8c7a6b; /* Mushroom brown */
-            border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            pointer-events: auto;
-            color: #4a3e35;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            text-align: left;
-        }
-
-        .input-group label {
-            font-family: 'Caveat', cursive;
-            font-size: 1.6rem;
-            color: #5c4b3a;
-            margin-bottom: 2px;
-        }
-
-        .input-group input {
-            background: #fdfaf6;
-            border: 1px solid #b8a99a;
-            color: #4a3e35;
-            padding: 10px;
-            font-size: 1.2rem;
-            border-radius: 5px;
-            font-family: 'Lora', serif;
-            text-align: center;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            box-shadow: 0 0 8px rgba(140, 122, 107, 0.6);
-            border-color: #8c7a6b;
-        }
-
-        .btn {
-            background: #8c7a6b; /* Mushroom */
-            border: 2px solid #5c4b3a;
-            color: #f4efeb;
-            padding: 12px 35px;
-            font-size: 1.2rem;
-            font-family: 'Lora', serif;
-            font-weight: bold;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            pointer-events: auto;
-        }
-
-        .btn:hover {
-            background: #5c4b3a;
-            transform: translateY(-2px);
-        }
-
-        .btn:active {
-            transform: translateY(2px);
-        }
-
-        /* HUD */
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 15px 20px;
-            background: linear-gradient(to bottom, rgba(70,80,60,0.8), transparent); /* Shade gradient */
-            color: #fdf5e6;
-            font-size: 1.2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            pointer-events: none;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
-        }
-
-        #bottom-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px;
-            background: linear-gradient(to top, rgba(70,80,60,0.9), transparent);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        .status-warn { color: #e9c46a !important; }
-        .status-crit { color: #e76f51 !important; }
-
-        /* ACTION BUTTONS */
-        .action-btn {
-            cursor: pointer;
-            pointer-events: auto;
-            transition: all 0.3s ease;
-        }
+        canvas { display: block; width: 100vw; height: 100vh; }
         
-        /* 5 Second Cooldown State */
-        .on-cooldown {
-            opacity: 0.3;
-            filter: grayscale(100%);
-            pointer-events: none !important;
-            transform: scale(0.95);
-        }
-
-        #banner-btn {
-            background: rgba(244, 239, 235, 0.8);
-            color: #5c4b3a;
-            border: 2px solid #8c7a6b;
-            padding: 5px 15px;
-            border-radius: 8px;
-            font-size: 1.5rem;
-            box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-        }
-
-        #banner-btn:active {
-            background: #d4c7b8;
-        }
-
-        #banner-btn.available:not(.on-cooldown) {
-            background: rgba(255, 240, 200, 0.9);
-            animation: pulseBanner 2s infinite alternate;
-            border-color: #d4a373;
-        }
-
-        @keyframes pulseBanner {
-            from { box-shadow: 0 0 5px rgba(212, 163, 115, 0.4); transform: scale(1); }
-            to { box-shadow: 0 0 15px rgba(212, 163, 115, 0.8); transform: scale(1.05); }
-        }
-
-        /* MOBILE CONTROLS HINT */
-        #controls-hint {
+        #dialogue-overlay {
             position: absolute;
-            bottom: 120px;
-            width: 100%;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
             text-align: center;
-            color: rgba(255, 255, 255, 0.8);
-            font-family: 'Caveat', cursive;
-            font-size: 1.5rem;
-            letter-spacing: 1px;
+            color: rgba(212, 175, 55, 0.9);
+            font-size: 16px;
+            line-height: 1.4;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             pointer-events: none;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            z-index: 20;
+            opacity: 0;
+            transition: opacity 1s ease, transform 1s ease;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+
+        #dialogue-overlay.visible {
+            opacity: 1;
+            transform: translate(-50%, -55%);
+        }
+
+        #wake-screen {
+            position: absolute; inset: 0;
+            background: #050505;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.8s ease;
+        }
+        #wake-sphere {
+            width: 70px; height: 70px;
+            border-radius: 50%;
+            background: #111;
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.15);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            animation: pulse-ring 2.5s infinite ease-in-out;
+        }
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 0.6; box-shadow: 0 0 20px rgba(212, 175, 55, 0.1); }
+            50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 50px rgba(212, 175, 55, 0.25); }
+        }
+
+        #texture-overlay {
+            position: absolute; inset: 0;
+            background-image: url('https://www.transparenttextures.com/patterns/p6.png');
+            opacity: 0.1; pointer-events: none; z-index: 5;
         }
     </style>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
 <body>
 
-    <div id="game-container">
-        <div id="vibe-overlay"></div>
-        <canvas id="gameCanvas"></canvas>
-        
-        <div id="ui-layer">
-            <div id="hud" class="hidden">
-                <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                    <div>SCORE: <span id="scoreDisplay">0</span></div>
-                    <div style="font-size: 0.9rem; color: #e8dcc8; font-family: 'Caveat', cursive; font-size: 1.6rem;">PILOT: <span id="pilotDisplay" style="color:#fdf5e6;">___</span></div>
-                </div>
-                
-                <div style="display:flex; flex-direction:column; align-items:flex-end;">
-                    <div>ALTITUDE: <span id="altDisplay">1200</span> FT</div>
-                    <div style="font-size:0.8rem; margin-top:5px; color:#e8dcc8;">INTEGRITY: <span id="integrityDisplay">100%</span></div>
-                </div>
-            </div>
-
-            <div id="bottom-bar" class="hidden">
-                <div style="text-align:center; pointer-events:auto; display:flex; flex-direction:column; align-items:center; gap:8px;">
-                    <button id="banner-btn" class="action-btn available">📜</button>
-                    <!-- EMOJI BALLOON ADDER -->
-                    <div id="emoji-adder" style="display:flex; justify-content:center; gap:5px;">
-                        <input type="text" id="emoji-input" placeholder="🍄" maxlength="3" style="width: 45px; text-align: center; background: rgba(244, 239, 235, 0.9); color: #4a3e35; border: 1px solid #8c7a6b; border-radius: 4px; font-size: 1.2rem;">
-                        <button id="add-balloon-btn" class="action-btn" style="background: #e8dcc8; color: #000; border: 1px solid #8c7a6b; border-radius: 4px; padding: 0 10px; cursor: pointer; text-shadow: none; font-size: 1.5rem; box-shadow: 1px 1px 0px rgba(0,0,0,0.3);">🎈</button>
-                        <button id="add-kite-btn" class="action-btn" style="background: #fdfaf6; color: #000; border: 1px solid #8c7a6b; border-radius: 4px; padding: 0 10px; cursor: pointer; text-shadow: none; box-shadow: 1px 1px 0px rgba(0,0,0,0.3); font-size: 1.5rem;">🪁</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="start-screen" class="screen">
-                <h1>Airship Afternoon</h1>
-                
-                <div class="setup-panel">
-                    <div class="input-group">
-                        <label>Enter Pilot Name:</label>
-                        <input type="text" id="setup-name" placeholder="Captain Acorn" maxlength="15">
-                    </div>
-                    <div class="input-group">
-                        <label>Select 3 Starting Emojis:</label>
-                        <input type="text" id="setup-emojis" placeholder="🍄🍃🦋" maxlength="10">
-                    </div>
-                </div>
-
-                <p style="font-family: 'Caveat', cursive; font-size: 1.8rem; margin-bottom: 20px;">Hold Space or Touch to catch the wind</p>
-                <button class="btn" id="start-btn">Untie & Launch</button>
-            </div>
-
-            <div id="game-over-screen" class="screen hidden" style="background: rgba(45, 55, 45, 0.85);">
-                <h1 style="color: #e76f51;">Winded</h1>
-                <h2 id="fail-reason" style="font-family: 'Lora', serif; color: #fdf5e6; margin-bottom: 20px; font-size: 1.5rem;"></h2>
-                <p style="font-family: 'Caveat', cursive; font-size: 2rem;">Final Score: <span id="final-score" style="color:#fdf5e6; font-weight:bold;">0</span></p>
-                <button class="btn" id="restart-btn">Rest & Retry</button>
-            </div>
-            
-            <div id="controls-hint" class="hidden">
-                [ HOLD TO GLIDE ]
-            </div>
-        </div>
+    <div id="wake-screen">
+        <div id="wake-sphere"></div>
     </div>
 
+    <div id="texture-overlay"></div>
+    <div id="dialogue-overlay"></div>
+
     <script>
-        window.onload = function() {
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            // UI Elements
-            const startScreen = document.getElementById('start-screen');
-            const gameOverScreen = document.getElementById('game-over-screen');
-            const hud = document.getElementById('hud');
-            const bottomBar = document.getElementById('bottom-bar');
-            const controlsHint = document.getElementById('controls-hint');
-            const scoreDisplay = document.getElementById('scoreDisplay');
-            const altDisplay = document.getElementById('altDisplay');
-            const integrityDisplay = document.getElementById('integrityDisplay');
-            const pilotDisplay = document.getElementById('pilotDisplay');
-            const finalScoreDisplay = document.getElementById('final-score');
-            const failReasonDisplay = document.getElementById('fail-reason');
-            const startBtn = document.getElementById('start-btn');
-            const restartBtn = document.getElementById('restart-btn');
-            const bannerBtn = document.getElementById('banner-btn');
-            
-            // Inputs
-            const emojiInput = document.getElementById('emoji-input');
-            const addBalloonBtn = document.getElementById('add-balloon-btn');
-            const addKiteBtn = document.getElementById('add-kite-btn');
-            const setupNameInput = document.getElementById('setup-name');
-            const setupEmojisInput = document.getElementById('setup-emojis');
+        function initApp() {
+            try {
+                // --- CONFIGURATION ---
+                const DIALOGUE = {
+                    sleep: ["Rest restores the mind", "Enter the quiet", "Dream to resolve"],
+                    sunlight: ["Seek the morning light", "Warmth anchors the clock", "Clarity follows the sun"],
+                    movement: ["Energy flows with action", "Strengthen the vessel", "Motion is medicine"],
+                    nutrition: ["Fuel with intent", "Simplicity sustains", "Nourish the core"],
+                    relationships: ["Connection is life", "Presence is a gift", "We grow together"]
+                };
 
-            // Game Assets
-            const shipImg = new Image();
-            shipImg.src = 'airship.png'; 
-            
-            const bgImg = new Image();
-            bgImg.src = 'background.jpg';
+                const PILLARS = [
+                    { id: 'sleep', color: 0xd4af37, shape: 'TorusKnotGeometry', args: [0.2, 0.06, 64, 8] },
+                    { id: 'sunlight', color: 0x4287f5, shape: 'OctahedronGeometry', args: [0.3] },
+                    { id: 'movement', color: 0xf54242, shape: 'SphereGeometry', args: [0.3, 32, 32] },
+                    { id: 'nutrition', color: 0x9c42f5, shape: 'CylinderGeometry', args: [0.2, 0.2, 0.4, 16] },
+                    { id: 'relationships', color: 0x42f569, shape: 'TorusGeometry', args: [0.2, 0.1, 16, 32] }
+                ];
 
-            // User's Banner Messages
-            const bannerMessages = [
-                "", // State 0: No Banner
-                "We Love you _______ ",
-                " ________ thank you",
-                "i see you _______working hard ",
-                "I appreciate you ___________ ",
-                "I Love You ________With all my blood "
-            ];
-            let currentBannerIdx = 0;
+                const { Engine, Runner, Bodies, Composite, Constraint, Events } = Matter;
+                const engine = Engine.create();
+                engine.gravity.y = 0; 
 
-            // Game State Constants
-            const STATE = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
-            let currentState = STATE.MENU;
+                let currentMode = 'orbit'; 
+                let orbitRotation = 0;
+                let isNavLocked = false; // 1 second timer for buttons
+                let screenW = window.innerWidth;
+                let screenH = window.innerHeight;
 
-            // Game Variables
-            let frames = 0;
-            let score = 0;
-            let bgX = 0;
-            let gameSpeed = 3;
-            let isThrusting = false;
-            let animationId;
-            let menuAnimationId;
-            let actionCooldown = false; // Prevents spamming buttons
-            
-            // Entities
-            let player;
-            let particles = []; // Obstacles array completely removed
+                const scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x050505, 0.02);
+                let aspect = screenW / screenH;
+                const viewSize = 10; 
+                const camera = new THREE.OrthographicCamera(-viewSize*aspect/2, viewSize*aspect/2, viewSize/2, -viewSize/2, 0.1, 100);
+                camera.position.z = 10;
 
-            // Handle Resize
-            function resize() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-            window.addEventListener('resize', resize);
-            resize();
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(screenW, screenH);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+                document.body.appendChild(renderer.domElement);
 
-            // Classes
-            class Player {
-                constructor() {
-                    // Normal playing size
-                    this.width = Math.min(canvas.width * 0.15, 120);
-                    this.height = this.width * 0.75;
-                    this.x = Math.min(canvas.width * 0.3, 300); // Starting position
-                    this.y = canvas.height / 2 - this.height / 2;
-                    
-                    this.hitbox = {
-                        offsetX: this.width * 0.1, 
-                        offsetY: this.height * 0.15,
-                        w: this.width * 0.8, 
-                        h: this.height * 0.7
-                    };
+                scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight.position.set(5, 5, 10);
+                dirLight.castShadow = true;
+                scene.add(dirLight);
 
-                    this.vy = 0;
-                    this.vx = 0;
-                    this.gravity = 0.18;
-                    this.thrustY = -0.4;
-                    this.thrustX = 0.25; // Forward thrust to fight the banner drag
-                    this.drag = 0.96;
-                    
-                    this.kiteDamage = 0; // 0 to 1
-                    this.damagePullDir = 1; // 1 (down) or -1 (up)
-
-                    this.customBalloons = []; // Array for tied emojis
-                    this.kites = []; // Array for origami kites
-                }
-
-                takeDamage(amount, dir) {
-                    this.kiteDamage = Math.min(1, this.kiteDamage + amount);
-                    this.damagePullDir = dir;
-                    // Visual screen flash for taking damage
-                    canvas.style.filter = 'sepia(1) hue-rotate(-50deg) saturate(3)';
-                    setTimeout(() => canvas.style.filter = 'none', 150);
-                }
-
-                addBalloon(emojiChar) {
-                    this.customBalloons.push({
-                        emoji: emojiChar,
-                        // Set a target position clumping up and behind the ship
-                        tX: -20 - Math.random() * 80, 
-                        tY: -40 - Math.random() * 60,
-                        x: 0, // start at ship
-                        y: 0,
-                        phase: Math.random() * Math.PI * 2 // for random swaying
-                    });
-                    
-                    // Added bonus: Every balloon gives a tiny bit of extra lift!
-                    this.thrustY = Math.max(-0.6, this.thrustY - 0.015);
-                }
-
-                addKite() {
-                    const kiteTypes = ['diamond', 'airplane', 'crane'];
-                    const kType = kiteTypes[this.kites.length % 3];
-                    
-                    this.kites.push({
-                        type: kType,
-                        tX: 0, // target calculated dynamically in update() to stack them
-                        tY: 0, 
-                        x: this.width/2, // start at front of ship
-                        y: 0,
-                        phase: Math.random() * Math.PI * 2 // for random swaying
-                    });
-                }
-
-                update() {
-                    // Banner Drag Mechanics
-                    let bannerDragX = currentBannerIdx > 0 ? -0.2 : -0.02; // Strong pull left if deployed
-                    
-                    // Damaged Kites Mechanics (Uneven Physics)
-                    let damagePullY = this.kiteDamage * 0.3 * this.damagePullDir;
-                    let damageDragX = this.kiteDamage * -0.15; // Extra left pull from damage
-
-                    // Origami Kites: Pull strictly FORWARD (right) to fight the drag!
-                    let origamiKiteThrust = this.kites.length * 0.035;
-
-                    if (isThrusting) {
-                        this.vy += this.thrustY;
-                        this.vx += this.thrustX;
-                        // Particles
-                        if (frames % 3 === 0) {
-                            particles.push(new Particle(this.x + this.width*0.1, this.y + this.height*0.8));
-                        }
-                    } else {
-                        this.vy += this.gravity + damagePullY;
-                    }
-                    
-                    // Add all horizontal forces (drag pulling left, kites pulling right)
-                    this.vx += bannerDragX + damageDragX + origamiKiteThrust;
-
-                    this.vy *= this.drag;
-                    this.vx *= this.drag;
-                    
-                    this.y += this.vy;
-                    this.x += this.vx;
-
-                    // Bounds X limits
-                    let maxX = canvas.width * 0.5; // Max runway center screen
-                    if (this.x > maxX) {
-                        this.x = maxX;
-                        this.vx = 0;
-                    }
-                    if (this.x < -this.width) {
-                        triggerGameOver("DRAGGED OFF COURSE!");
-                    }
-
-                    // Gentle Floor / Ceiling bounds
-                    if (this.y < 0) {
-                        this.y = 0;
-                        this.vy = Math.abs(this.vy) * 0.6; // Bounce down gently
-                        if (frames % 10 === 0) this.takeDamage(0.05, 1);
-                    }
-                    if (this.y + this.height > canvas.height) {
-                        this.y = canvas.height - this.height;
-                        this.vy = -Math.abs(this.vy) * 0.6; // Bounce up gently
-                        if (frames % 10 === 0) this.takeDamage(0.05, -1);
-                    }
-
-                    // Update Custom Balloons physics
-                    this.customBalloons.forEach(b => {
-                        // Drag them left when ship accelerates forward
-                        let windPullX = -this.vx * 15; 
-                        
-                        // Sway mechanics
-                        let swayX = Math.sin(frames * 0.05 + b.phase) * 10;
-                        let swayY = Math.cos(frames * 0.04 + b.phase) * 5;
-
-                        let targetX = b.tX + windPullX + swayX;
-                        let targetY = b.tY + swayY;
-
-                        // Spring formula for bouncy attachment
-                        b.x += (targetX - b.x) * 0.1;
-                        b.y += (targetY - b.y) * 0.1;
-                    });
-                    
-                    // Update Origami Kites physics
-                    this.kites.forEach((k, index) => {
-                        // Stack each kite above and ahead of the previous
-                        k.tX = this.width/2 + 30 + (index * 45);
-                        k.tY = -this.height/2 - 20 - (index * 30);
-                        
-                        // Kites cut through the wind better than balloons
-                        let windPullX = -this.vx * 3; 
-                        
-                        // Sway mechanics
-                        let swayX = Math.sin(frames * 0.06 + k.phase) * 12;
-                        let swayY = Math.cos(frames * 0.05 + k.phase) * 6;
-
-                        let targetX = k.tX + windPullX + swayX;
-                        let targetY = k.tY + swayY;
-
-                        k.x += (targetX - k.x) * 0.12;
-                        k.y += (targetY - k.y) * 0.12;
-                    });
-
-                    // Update HUD Readouts
-                    let visualAlt = Math.floor(2500 - ((this.y / canvas.height) * 2000));
-                    altDisplay.innerText = visualAlt;
-                    
-                    let integrityPct = Math.floor((1 - this.kiteDamage) * 100);
-                    integrityDisplay.innerText = integrityPct + "%";
-                    if (integrityPct < 40) integrityDisplay.className = 'status-crit';
-                    else if (integrityPct < 70) integrityDisplay.className = 'status-warn';
-                    else integrityDisplay.className = '';
-                }
-
-                draw() {
-                    ctx.save();
-                    // Move to center of ship for rotation
-                    ctx.translate(this.x + this.width/2, this.y + this.height/2);
-                    
-                    // Pitch based on velocity
-                    let targetRotation = this.vy * 0.05;
-                    ctx.rotate(targetRotation);
-
-                    // --- DRAW KITE DAMAGE / FRAYED STRINGS ---
-                    if (this.kiteDamage > 0) {
-                        ctx.beginPath();
-                        ctx.moveTo(0, -this.height/2);
-                        ctx.lineTo(10 + Math.random()*20, -this.height - Math.random()*20);
-                        ctx.strokeStyle = `rgba(255, ${255 - this.kiteDamage*255}, 0, 0.8)`;
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-                    }
-
-                    // --- DRAW TRAILING BANNER ---
-                    if (currentBannerIdx > 0) {
-                        let msg = bannerMessages[currentBannerIdx];
-                        ctx.save();
-                        // Banner Font settings
-                        ctx.font = "bold 14px Arial";
-                        let textMetrics = ctx.measureText(msg);
-                        let padding = 30;
-                        let bannerWidth = textMetrics.width + padding;
-                        let bannerHeight = 30;
-                        let stringLength = 40; // Distance behind the ship
-
-                        // Calculate banner coordinates
-                        let bannerX = -this.width/2 - stringLength - bannerWidth;
-                        let bannerY = -bannerHeight/2;
-                        
-                        // Draw towing string
-                        ctx.beginPath();
-                        ctx.moveTo(-this.width/2 + 10, 0); // Attach near tail
-                        ctx.lineTo(bannerX + bannerWidth, 0);
-                        ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-
-                        // Draw banner background
-                        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-                        ctx.fillRect(bannerX, bannerY, bannerWidth, bannerHeight);
-                        ctx.strokeStyle = "#ffcc00"; // Golden border
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(bannerX, bannerY, bannerWidth, bannerHeight);
-
-                        // Draw banner text
-                        ctx.fillStyle = "#000";
-                        ctx.textAlign = "center";
-                        ctx.textBaseline = "middle";
-                        ctx.fillText(msg, bannerX + bannerWidth/2, 0);
-                        
-                        ctx.restore();
-                    }
-                    // --- END BANNER ---
-
-                    // --- DRAW CUSTOM TYPED EMOJI BALLOONS ---
-                    ctx.save();
-                    ctx.lineWidth = 1;
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-                    
-                    // First draw all the strings
-                    this.customBalloons.forEach(b => {
-                        ctx.beginPath();
-                        ctx.moveTo(-this.width/4, -this.height/4); // attach string to top back of ship
-                        ctx.lineTo(b.x, b.y);
-                        ctx.stroke();
-                    });
-
-                    // Then draw all the shiny balloons on top of strings
-                    this.customBalloons.forEach(b => {
-                        ctx.save();
-                        ctx.translate(b.x, b.y);
-                        
-                        // Angle balloon slightly based on its drag
-                        let rot = (b.x - b.tX) * 0.02;
-                        ctx.rotate(rot);
-
-                        // Glow effect
-                        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
-                        ctx.shadowBlur = 15;
-                        ctx.font = "40px Arial";
-                        ctx.textAlign = "center";
-                        ctx.textBaseline = "middle";
-                        ctx.fillText(b.emoji, 0, 0);
-
-                        // Shiny Gloss Overlay (Mylar effect)
-                        ctx.shadowBlur = 0; 
-                        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-                        ctx.beginPath();
-                        ctx.ellipse(-8, -12, 12, 6, Math.PI/5, 0, Math.PI*2);
-                        ctx.fill();
-
-                        ctx.restore();
-                    });
-                    ctx.restore();
-                    // --- END CUSTOM BALLOONS ---
-
-                    // --- DRAW ORIGAMI KITES ---
-                    ctx.save();
-                    this.kites.forEach(k => {
-                        // Draw string from front-top of ship
-                        ctx.beginPath();
-                        ctx.moveTo(this.width/3, -this.height/6);
-                        ctx.lineTo(k.x, k.y);
-                        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-                        ctx.lineWidth = 1;
-                        ctx.stroke();
-
-                        ctx.save();
-                        ctx.translate(k.x, k.y);
-                        
-                        // Tilt kite slightly upward and forward
-                        let rot = (k.x - k.tX) * 0.01 + 0.3; 
-                        ctx.rotate(rot);
-
-                        // Draw Tail (Behind kite)
-                        ctx.beginPath();
-                        ctx.moveTo(0, 5); // Start at bottom of kite
-                        ctx.quadraticCurveTo(-15, 15, -5, 25);
-                        ctx.quadraticCurveTo(10, 35, -10, 45);
-                        ctx.strokeStyle = '#000000';
-                        ctx.lineWidth = 1;
-                        ctx.stroke();
-                        
-                        // Tiny ribbon bows on the tail
-                        ctx.fillStyle = '#ffffff';
-                        let drawBow = (bx, by) => {
-                            ctx.beginPath();
-                            ctx.moveTo(bx, by); ctx.lineTo(bx - 3, by - 3); ctx.lineTo(bx - 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
-                            ctx.beginPath();
-                            ctx.moveTo(bx, by); ctx.lineTo(bx + 3, by - 3); ctx.lineTo(bx + 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
-                        };
-                        drawBow(-8, 18);
-                        drawBow(1, 32);
-                        drawBow(-5, 42);
-
-                        // Origami Kite Base Styles
-                        ctx.fillStyle = '#ffffff'; // All white
-                        ctx.strokeStyle = '#000000'; // Black folds
-                        ctx.lineWidth = 1.5;
-                        
-                        if (k.type === 'diamond') {
-                            ctx.beginPath();
-                            ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0);
-                            ctx.closePath();
-                            ctx.fill(); ctx.stroke();
-                            // Folds
-                            ctx.beginPath();
-                            ctx.moveTo(0, -12); ctx.lineTo(0, 12); // Vertical fold
-                            ctx.moveTo(-8, 0); ctx.lineTo(8, 0);   // Horizontal fold
-                            ctx.stroke();
-                        } else if (k.type === 'airplane') {
-                            ctx.beginPath();
-                            ctx.moveTo(15, 0); ctx.lineTo(-10, -8); ctx.lineTo(-5, 0); ctx.lineTo(-10, 8);
-                            ctx.closePath();
-                            ctx.fill(); ctx.stroke();
-                            // Folds
-                            ctx.beginPath();
-                            ctx.moveTo(15, 0); ctx.lineTo(-5, 0); // Center fold
-                            ctx.stroke();
-                        } else if (k.type === 'crane') {
-                            ctx.beginPath();
-                            ctx.moveTo(0, 5); ctx.lineTo(12, -8); ctx.lineTo(8, -2); ctx.lineTo(-5, -15); ctx.lineTo(-2, -2); ctx.lineTo(-12, -8);
-                            ctx.closePath();
-                            ctx.fill(); ctx.stroke();
-                            // Folds
-                            ctx.beginPath();
-                            ctx.moveTo(0, 5); ctx.lineTo(8, -2); // Neck line
-                            ctx.moveTo(0, 5); ctx.lineTo(-2, -2); // Tail base line
-                            ctx.moveTo(0, 5); ctx.lineTo(-5, -15); // Main wing fold
-                            ctx.stroke();
-                        }
-
-                        ctx.restore();
-                    });
-                    ctx.restore();
-                    // --- END ORIGAMI KITES ---
-
-                    // Draw actual ship image or fallback
-                    if (shipImg.complete && shipImg.naturalWidth > 0) {
-                        ctx.drawImage(shipImg, -this.width/2, -this.height/2, this.width, this.height);
-                    } else {
-                        ctx.fillStyle = '#A0522D';
-                        ctx.beginPath();
-                        ctx.ellipse(0, 0, this.width/2.5, this.height/3, 0, 0, Math.PI*2);
-                        ctx.fill();
-                        
-                        ctx.font = `${this.height}px Arial`;
-                        ctx.textAlign = 'center';
-                        ctx.textBaseline = 'middle';
-                        ctx.fillText('🎈', 0, -this.height/1.5);
-                    }
-                    ctx.restore();
-                }
-            }
-
-            class Particle {
-                constructor(x, y) {
-                    this.x = x;
-                    this.y = y;
-                    this.vx = -Math.random() * 2 - 1;
-                    this.vy = (Math.random() - 0.5) * 1;
-                    this.life = 1.0;
-                    this.decay = Math.random() * 0.02 + 0.02;
-                    this.size = Math.random() * 4 + 2;
-                }
-                update() {
-                    let positionRatio = Math.max(0, player.x / (canvas.width * 0.5));
-                    let currentSpeed = gameSpeed * (1 + positionRatio);
-                    this.x += this.vx - currentSpeed * 0.5;
-                    this.y += this.vy;
-                    this.life -= this.decay;
-                }
-                draw() {
-                    ctx.fillStyle = `rgba(255, 215, 100, ${this.life * 0.8})`;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-                    ctx.fill();
-                }
-            }
-
-            function triggerGameOver(reason = "SYSTEM FAILURE") {
-                currentState = STATE.GAMEOVER;
-                cancelAnimationFrame(animationId);
-                hud.classList.add('hidden');
-                bottomBar.classList.add('hidden');
-                controlsHint.classList.add('hidden');
-                gameOverScreen.classList.remove('hidden');
-                failReasonDisplay.innerText = reason;
-                finalScoreDisplay.innerText = score;
-                isThrusting = false;
-            }
-
-            // Centralized cooldown manager
-            function triggerGlobalCooldown() {
-                actionCooldown = true;
-                
-                bannerBtn.classList.add('on-cooldown');
-                addBalloonBtn.classList.add('on-cooldown');
-                addKiteBtn.classList.add('on-cooldown');
-                
-                setTimeout(() => {
-                    actionCooldown = false;
-                    bannerBtn.classList.remove('on-cooldown');
-                    addBalloonBtn.classList.remove('on-cooldown');
-                    addKiteBtn.classList.remove('on-cooldown');
-                }, 5000); // 5 Seconds
-            }
-
-            function initGame() {
-                if (menuAnimationId) cancelAnimationFrame(menuAnimationId);
-
-                let pName = setupNameInput.value.trim() || "Captain Acorn";
-                pilotDisplay.innerText = pName;
-
-                let setupEmojiStr = setupEmojisInput.value.trim() || "🍄";
-                let startEmojisArr = Array.from(setupEmojiStr).slice(0, 3); 
-                
-                player = new Player();
-                startEmojisArr.forEach(e => {
-                    if (e.trim() !== '') player.addBalloon(e);
+                window.addEventListener('resize', () => {
+                    screenW = window.innerWidth; screenH = window.innerHeight;
+                    aspect = screenW / screenH;
+                    camera.left = -viewSize * aspect / 2; camera.right = viewSize * aspect / 2;
+                    camera.top = viewSize / 2; camera.bottom = -viewSize / 2;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(screenW, screenH);
                 });
 
-                particles = []; // No obstacles needed anymore!
-                frames = 0;
-                score = 0;
-                gameSpeed = 4;
-                scoreDisplay.innerText = score;
-                currentState = STATE.PLAYING;
+                // Materials
+                const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.9 });
+                const trayMat = new THREE.MeshStandardMaterial({ color: 0x2a1d15, roughness: 0.8 });
+                const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a100a, roughness: 1.0 });
+                const flipperMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.5, roughness: 0.4 });
+                const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.2 });
+                const riverStoneMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.1 });
                 
-                startScreen.classList.add('hidden');
-                gameOverScreen.classList.add('hidden');
-                hud.classList.remove('hidden');
-                bottomBar.classList.remove('hidden');
-                controlsHint.classList.remove('hidden');
+                const boxWidth = viewSize * aspect;
+                const boxHeight = viewSize;
                 
-                // Reset Button/Cooldown states
-                emojiInput.value = '';
-                currentBannerIdx = 0;
-                actionCooldown = false;
-                bannerBtn.classList.add('available');
-                bannerBtn.classList.remove('on-cooldown');
-                addBalloonBtn.classList.remove('on-cooldown');
-                addKiteBtn.classList.remove('on-cooldown');
-                
-                animate();
-            }
+                const floor = new THREE.Mesh(new THREE.PlaneGeometry(boxWidth * 2, boxHeight * 2), floorMat);
+                floor.receiveShadow = true;
+                scene.add(floor);
 
-            // Controls logic
-            function thrustOn(e) { 
-                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('action-btn')) return; 
-                if (document.activeElement === emojiInput || document.activeElement === setupNameInput || document.activeElement === setupEmojisInput) return;
-                
-                if (e.type !== 'keydown' || e.code === 'Space') {
-                    if (currentState === STATE.PLAYING) isThrusting = true;
-                }
-            }
-            function thrustOff(e) { 
-                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('action-btn')) return;
-                if (document.activeElement === emojiInput || document.activeElement === setupNameInput || document.activeElement === setupEmojisInput) return;
-
-                if (e.type !== 'keyup' || e.code === 'Space') {
-                    isThrusting = false;
-                }
-            }
-
-            function cycleBanner(e) {
-                e.stopPropagation(); 
-                if (actionCooldown) return; // Prevent spam
-
-                currentBannerIdx = (currentBannerIdx + 1) % bannerMessages.length;
-                if (currentBannerIdx === 0) {
-                    bannerBtn.classList.add('available');
-                } else {
-                    bannerBtn.classList.remove('available');
-                }
-                triggerGlobalCooldown();
-            }
-            
-            function tieBalloon(e) {
-                e.stopPropagation();
-                if (actionCooldown) return; // Prevent spam
-
-                const val = emojiInput.value.trim();
-                if (val && player) {
-                    player.addBalloon(val);
-                    emojiInput.value = ''; 
-                    triggerGlobalCooldown();
-                }
-            }
-            
-            function deployOrigamiKite(e) {
-                e.stopPropagation();
-                if (actionCooldown) return; // Prevent spam
-
-                if (player) {
-                    player.addKite();
-                    triggerGlobalCooldown();
-                }
-            }
-
-            const inputsToIgnore = [emojiInput, setupNameInput, setupEmojisInput];
-            inputsToIgnore.forEach(input => {
-                input.addEventListener('keydown', e => e.stopPropagation());
-                input.addEventListener('keyup', e => e.stopPropagation());
-                input.addEventListener('mousedown', e => e.stopPropagation());
-                input.addEventListener('touchstart', e => e.stopPropagation());
-            });
-
-            // Event Listeners
-            window.addEventListener('mousedown', thrustOn);
-            window.addEventListener('mouseup', thrustOff);
-            window.addEventListener('touchstart', thrustOn, {passive: false});
-            window.addEventListener('touchend', thrustOff);
-            window.addEventListener('keydown', thrustOn);
-            window.addEventListener('keyup', thrustOff);
-
-            startBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
-            restartBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
-            
-            // UI Button Listeners
-            bannerBtn.addEventListener('click', cycleBanner);
-            bannerBtn.addEventListener('touchstart', cycleBanner, {passive: false});
-            addBalloonBtn.addEventListener('click', tieBalloon);
-            addBalloonBtn.addEventListener('touchstart', tieBalloon, {passive: false});
-            addKiteBtn.addEventListener('click', deployOrigamiKite);
-            addKiteBtn.addEventListener('touchstart', deployOrigamiKite, {passive: false});
-
-            // MENU SCENE ANIMATION
-            function menuAnimate() {
-                if (currentState !== STATE.MENU) return;
-                menuAnimationId = requestAnimationFrame(menuAnimate);
-
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                if (bgImg.complete && bgImg.naturalWidth > 0) {
-                    // Maintain aspect ratio so the panorama isn't squished
-                    let scale = canvas.height / bgImg.naturalHeight;
-                    let scaledWidth = bgImg.naturalWidth * scale;
-                    
-                    // Draw enough copies to fill the screen
-                    let copies = Math.ceil(canvas.width / scaledWidth) + 1;
-                    for(let i = 0; i < copies; i++) {
-                        ctx.drawImage(bgImg, bgX + (i * scaledWidth), 0, scaledWidth, canvas.height);
-                    }
-                    
-                    bgX -= 0.15; // Slow gentle pan
-                    
-                    // Seamless loop snap-back
-                    if (bgX <= -scaledWidth) {
-                        bgX += scaledWidth;
-                    }
+                const physicsBodies = [];
+                function createWall(x, y, w, h) {
+                    const body = Bodies.rectangle(x, y, w, h, { isStatic: true, friction: 0.5, restitution: 0.2 });
+                    physicsBodies.push(body);
+                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 1.5), woodMat);
+                    mesh.position.set(x, -y, 0.75); 
+                    scene.add(mesh);
                 }
 
-                let towerX = canvas.width * 0.2;
-                let towerY = canvas.height - 50;
-                let towerHeight = Math.min(canvas.height * 0.4, 250);
-                let towerWidth = 50;
-                let shipW = 80;
-                let shipH = 60;
-                let shipX = towerX + 120;
-                let shipY = towerY - towerHeight; 
-                
-                shipY += Math.sin(frames * 0.05) * 8;
+                createWall(0, -boxHeight/2 - 0.5, boxWidth + 2, 1); 
+                createWall(0, boxHeight/2 + 0.5, boxWidth + 2, 1); 
+                createWall(-boxWidth/2 - 0.5, 0, 1, boxHeight); 
+                createWall(boxWidth/2 + 0.5, 0, 1, boxHeight); 
 
-                ctx.save();
-                ctx.strokeStyle = '#5c4033'; 
-                ctx.lineWidth = 4;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(towerX - towerWidth/2, towerY);
-                ctx.lineTo(towerX - towerWidth/4, towerY - towerHeight);
-                ctx.moveTo(towerX + towerWidth/2, towerY);
-                ctx.lineTo(towerX + towerWidth/4, towerY - towerHeight);
-                ctx.stroke();
+                const marbles = [];
+                PILLARS.forEach((pillar, i) => {
+                    const angle = (i / PILLARS.length) * (Math.PI * 2);
+                    const x = Math.cos(angle) * 3;
+                    const y = Math.sin(angle) * 3;
 
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                let sections = 4;
-                for(let i=0; i<sections; i++) {
-                    let y1 = towerY - (towerHeight/sections)*i;
-                    let y2 = towerY - (towerHeight/sections)*(i+1);
-                    let w1 = towerWidth/2 - (towerWidth/4)*(i/sections);
-                    let w2 = towerWidth/2 - (towerWidth/4)*((i+1)/sections);
-                    ctx.moveTo(towerX - w1, y1);
-                    ctx.lineTo(towerX + w2, y2);
-                    ctx.moveTo(towerX + w1, y1);
-                    ctx.lineTo(towerX - w2, y2);
-                }
-                ctx.stroke();
-
-                ctx.fillStyle = '#8b5a2b';
-                ctx.fillRect(towerX - towerWidth*0.8, towerY - towerHeight - 20, towerWidth*1.6, 20);
-                ctx.fillRect(towerX - towerWidth*0.5, towerY - towerHeight - 40, towerWidth, 20);
-                ctx.restore();
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(towerX, towerY - towerHeight - 10);
-                ctx.quadraticCurveTo(towerX + 50, shipY + 20, shipX - shipW/2, shipY);
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.restore();
-
-                let previewEmojis = Array.from(setupEmojisInput.value.trim() || '🍄').slice(0, 3);
-                
-                ctx.save();
-                previewEmojis.forEach((emoji, i) => {
-                    let sway = Math.sin(frames * 0.04 + i) * 15;
-                    let bX = shipX - 10 + (i * 20) + sway;
-                    let bY = shipY - 50 - Math.abs(Math.cos(frames*0.05 + i)*10);
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(shipX, shipY - shipH/4);
-                    ctx.lineTo(bX, bY);
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-
-                    ctx.translate(bX, bY);
-                    let rot = (bX - shipX) * 0.01;
-                    ctx.rotate(rot);
-
-                    ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
-                    ctx.shadowBlur = 15;
-                    ctx.font = "35px Arial";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText(emoji, 0, 0);
-
-                    ctx.shadowBlur = 0; 
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-                    ctx.beginPath();
-                    ctx.ellipse(-6, -10, 8, 4, Math.PI/5, 0, Math.PI*2);
-                    ctx.fill();
-
-                    ctx.rotate(-rot);
-                    ctx.translate(-bX, -bY);
+                    const body = Bodies.circle(x, y, 0.3, { restitution: 0.6, friction: 0.001, density: 0.05, isSensor: true });
+                    physicsBodies.push(body);
+                    const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, opacity: 1, roughness: 0.1 });
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), mat);
+                    mesh.castShadow = true;
+                    scene.add(mesh);
+                    marbles.push({ body, mesh, material: mat, pillarData: pillar, fillLevel: 0, logs: 0, currentScale: 1 });
                 });
-                ctx.restore();
 
-                ctx.save();
-                if (shipImg.complete && shipImg.naturalWidth > 0) {
-                    ctx.drawImage(shipImg, shipX - shipW/2, shipY - shipH/2, shipW, shipH);
-                } else {
-                    ctx.fillStyle = '#A0522D';
-                    ctx.beginPath();
-                    ctx.ellipse(shipX, shipY, shipW/2.5, shipH/3, 0, 0, Math.PI*2);
-                    ctx.fill();
-                    ctx.font = `${shipH}px Arial`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('🎈', shipX, shipY - shipH/1.5);
+                const INSET_MODES = [
+                    { id: 'orbit', color: 0xa855f7 },
+                    { id: 'sandbox', color: 0x777777 },
+                    { id: 'billiards', color: 0x1a5e20 },
+                    { id: 'pinball', color: 0x22c55e },
+                    { id: 'maze', color: 0x3b82f6 },
+                    { id: 'koi', color: 0xffffff }
+                ];
+
+                const insetButtons = [];
+                const insetSpacing = Math.min(boxWidth / 7.5, 1.1);
+                const insetStartX = -((INSET_MODES.length - 1) * insetSpacing) / 2;
+
+                INSET_MODES.forEach((mode, i) => {
+                    const mat = new THREE.MeshPhysicalMaterial({ color: 0x111111, emissive: 0x000000, emissiveIntensity: 0, transmission: 0.8, roughness: 0.1 });
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), mat);
+                    const x = insetStartX + i * insetSpacing;
+                    const y = boxHeight/2 - 0.7; 
+                    mesh.position.set(x, -y, 0.4);
+                    scene.add(mesh);
+                    const light = new THREE.PointLight(mode.color, 0, 3);
+                    light.position.copy(mesh.position); light.position.z += 0.5;
+                    scene.add(light);
+                    insetButtons.push({ mesh, material: mat, light, modeData: mode, unlocked: (mode.id === 'orbit') });
+                });
+
+                const billiardsPockets = [];
+                const pocketGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 32);
+                const pocketMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+                [{x: -boxWidth/2 + 0.6, y: -boxHeight/2 + 0.6}, {x: boxWidth/2 - 0.6, y: -boxHeight/2 + 0.6}, {x: -boxWidth/2 + 0.6, y: boxHeight/2 - 0.6}, {x: boxWidth/2 - 0.6, y: boxHeight/2 - 0.6}, {x: -boxWidth/2 + 0.4, y: 0}, {x: boxWidth/2 - 0.4, y: 0}].forEach(p => {
+                    const mesh = new THREE.Mesh(pocketGeo, pocketMat);
+                    mesh.position.set(p.x, -p.y, 0.1); mesh.rotation.x = Math.PI / 2; mesh.visible = false;
+                    scene.add(mesh); billiardsPockets.push(mesh);
+                });
+                
+                const mazeWalls = [];
+                [{ x: -2.0, y: 0.0, w: 0.5, h: 4.0 }, { x: 2.0, y: -2.0, w: 4.0, h: 0.5 }, { x: 1.0, y: 2.0, w: 5.0, h: 0.5 }].forEach(w => {
+                    const body = Bodies.rectangle(w.x, w.y, w.w, w.h, { isStatic: true, isSensor: true });
+                    physicsBodies.push(body);
+                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w.w, w.h, 1.5), woodMat);
+                    mesh.position.set(w.x, -w.y, 0.75); mesh.visible = false;
+                    scene.add(mesh); mazeWalls.push({body, mesh});
+                });
+
+                const pinballElements = [];
+                [{ x: 0, y: -2.5, r: 0.6 }, { x: -1.5, y: -1.0, r: 0.5 }, { x: 1.5, y: -1.0, r: 0.5 }].forEach(b => {
+                    const body = Bodies.circle(b.x, b.y, b.r, { isStatic: true, isSensor: true, restitution: 1.5 });
+                    physicsBodies.push(body);
+                    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(b.r, b.r, 0.5, 32), brassMat);
+                    mesh.rotation.x = Math.PI / 2; mesh.position.set(b.x, -b.y, 0.25); mesh.castShadow = true; mesh.visible = false;
+                    scene.add(mesh); pinballElements.push({body, mesh});
+                });
+
+                const flippers = [];
+                function createFlipper(x, y, w, h, isLeft) {
+                    const body = Bodies.rectangle(x, y, w, h, { isSensor: true }); 
+                    const pivotX = isLeft ? x - w/2 + 0.2 : x + w/2 - 0.2;
+                    const pivot = Constraint.create({ pointA: { x: pivotX, y: y }, bodyB: body, pointB: { x: isLeft ? -w/2 + 0.2 : w/2 - 0.2, y: 0 }, stiffness: 1, length: 0 });
+                    const spring = Constraint.create({ pointA: { x: x, y: y + 2 }, bodyB: body, pointB: { x: isLeft ? w/2 : -w/2, y: 0 }, stiffness: 0.02, length: 1 });
+                    physicsBodies.push(body); Composite.add(engine.world, [pivot, spring]);
+                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 1.0), flipperMat);
+                    mesh.position.z = 0.5; mesh.visible = false;
+                    scene.add(mesh); flippers.push({ body, mesh, isLeft });
                 }
-                ctx.restore();
+                createFlipper(-1.5, boxHeight/2 - 2.0, 2.5, 0.4, true);
+                createFlipper(1.5, boxHeight/2 - 2.0, 2.5, 0.4, false);
 
-                frames++;
-            }
+                const koiElements = [];
+                const koiTray = new THREE.Mesh(new THREE.BoxGeometry(boxWidth, 1.5, 0.8), trayMat);
+                koiTray.position.set(0, -(boxHeight/2 - 1.2), 0.4); koiTray.visible = false;
+                scene.add(koiTray); koiElements.push(koiTray);
 
-            // MAIN GAME ANIMATION
-            function animate() {
-                if(currentState !== STATE.PLAYING) return;
-                animationId = requestAnimationFrame(animate);
+                const stonePos = [{x: -1.2, y: -2.0, s: 0.6}, {x: 1.8, y: -2.8, s: 0.9}, {x: -2.5, y: 0.5, s: 0.8}, {x: 2.2, y: 0.2, s: 0.7}, {x: 0.5, y: 2.5, s: 0.5}, {x: -1.0, y: 3.5, s: 0.4}, {x: 1.8, y: 2.8, s: 0.7}, {x: 0.2, y: -0.5, s: 0.5}];
+                stonePos.forEach(p => {
+                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 16), riverStoneMat);
+                    mesh.scale.set(p.s, p.s * 0.4, p.s * 0.7); mesh.position.set(p.x, -p.y, 0.2); mesh.rotation.z = Math.random() * Math.PI; mesh.visible = false;
+                    scene.add(mesh); koiElements.push(mesh);
+                });
 
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                Composite.add(engine.world, physicsBodies);
 
-                let maxX = canvas.width * 0.5;
-                let positionRatio = Math.max(0, player.x / maxX);
+                const state = { unlockedOrbit: true, unlockedSandbox: false, unlockedBilliards: false, unlockedPinball: false, unlockedMaze: false, unlockedKoi: false };
 
-                let currentBgSpeed = gameSpeed * 0.15 * (1 + positionRatio); 
-                if (bgImg.complete && bgImg.naturalWidth > 0) {
-                    // Maintain aspect ratio so the panorama isn't squished
-                    let scale = canvas.height / bgImg.naturalHeight;
-                    let scaledWidth = bgImg.naturalWidth * scale;
+                function saveState() {
+                    const data = { marbles: marbles.map(m => ({ id: m.pillarData.id, fill: m.fillLevel, logs: m.logs })), mode: currentMode };
+                    localStorage.setItem('marbles_master_save_v7', JSON.stringify(data));
+                }
+
+                function loadState() {
+                    const raw = localStorage.getItem('marbles_master_save_v7');
+                    if (!raw) return;
+                    try {
+                        const data = JSON.parse(raw);
+                        if (data.marbles) {
+                            data.marbles.forEach(s => {
+                                const m = marbles.find(item => item.pillarData.id === s.id);
+                                if (m) { m.fillLevel = s.fill; m.logs = s.logs; updateMarbleVisual(m); }
+                            });
+                        }
+                        if (data.mode) window.activateMode(data.mode);
+                        checkUnlocks();
+                    } catch(e) {}
+                }
+
+                function updateMarbleVisual(m) {
+                    const targetColor = new THREE.Color(m.pillarData.color);
+                    const hollowColor = new THREE.Color(0xffffff);
+                    const visualProgress = m.fillLevel / 0.9;
+                    m.material.color.copy(hollowColor).lerp(targetColor, visualProgress);
+                    m.material.transmission = 0.9 - (0.8 * visualProgress);
+                }
+
+                function logHabit(marble) {
+                    if (marble.fillLevel >= 0.9) return;
+                    const prompts = DIALOGUE[marble.pillarData.id];
+                    const promptText = prompts[marble.logs % prompts.length];
+                    const overlay = document.getElementById('dialogue-overlay');
+                    overlay.innerText = promptText; overlay.classList.add('visible');
+                    setTimeout(() => overlay.classList.remove('visible'), 3500);
+                    marble.logs++; marble.fillLevel = Math.round((marble.fillLevel + 0.10) * 10) / 10;
+                    marble.fillLevel = Math.min(marble.fillLevel, 0.9);
+                    updateMarbleVisual(marble); checkUnlocks(); saveState();
+                }
+
+                function checkUnlocks() {
+                    const isSandboxUnlocked = marbles.some(m => m.fillLevel > 0);
+                    const totalFillCount = marbles.reduce((sum, m) => sum + (m.fillLevel > 0 ? 1 : 0), 0);
+                    const isBilliardsUnlocked = totalFillCount >= 2 || marbles.some(m => m.fillLevel >= 0.2);
+                    const isPinballUnlocked = marbles.some(m => m.fillLevel >= 0.3);
+                    const isMazeUnlocked = marbles.some(m => m.fillLevel >= 0.45);
+                    const isKoiUnlocked = marbles.every(m => m.fillLevel >= 0.9);
+
+                    insetButtons.forEach(btn => {
+                        const mId = btn.modeData.id;
+                        let unlocked = (mId === 'orbit') || (mId === 'sandbox' && isSandboxUnlocked) || (mId === 'billiards' && isBilliardsUnlocked) || (mId === 'pinball' && isPinballUnlocked) || (mId === 'maze' && isMazeUnlocked) || (mId === 'koi' && isKoiUnlocked);
+                        btn.unlocked = unlocked;
+                        const isActive = currentMode === mId;
+                        if (unlocked) {
+                            btn.material.color.setHex(btn.modeData.color); btn.material.emissive.setHex(btn.modeData.color);
+                            btn.material.emissiveIntensity = isActive ? 2.5 : 0.8; btn.light.intensity = isActive ? 1.5 : 0.4;
+                        } else {
+                            btn.material.color.setHex(0x111111); btn.material.emissive.setHex(0x000000);
+                            btn.material.emissiveIntensity = 0; btn.light.intensity = 0;
+                        }
+                    });
+                    state.unlockedSandbox = isSandboxUnlocked; state.unlockedBilliards = isBilliardsUnlocked;
+                    state.unlockedPinball = isPinballUnlocked; state.unlockedMaze = isMazeUnlocked; state.unlockedKoi = isKoiUnlocked;
+                }
+
+                window.activateMode = function(newMode) {
+                    if (newMode === 'sandbox' && !state.unlockedSandbox) return;
+                    if (newMode === 'billiards' && !state.unlockedBilliards) return;
+                    if (newMode === 'pinball' && !state.unlockedPinball) return;
+                    if (newMode === 'maze' && !state.unlockedMaze) return;
+                    if (newMode === 'koi' && !state.unlockedKoi) return;
+                    if (newMode === 'koi' && currentMode !== 'koi') { playAcousticRipple(); if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100, 200]); }
                     
-                    // Draw enough copies to fill the screen
-                    let copies = Math.ceil(canvas.width / scaledWidth) + 1;
-                    for(let i = 0; i < copies; i++) {
-                        ctx.drawImage(bgImg, bgX + (i * scaledWidth), 0, scaledWidth, canvas.height);
+                    const oldMode = currentMode; currentMode = newMode;
+                    checkUnlocks(); if (oldMode !== newMode) saveState();
+                    
+                    // Start 1 second button timer
+                    isNavLocked = true;
+                    setTimeout(() => { isNavLocked = false; }, 1000);
+
+                    floorMat.color.setHex(0x1a100a);
+                    marbles.forEach(m => {
+                        m.body.isSensor = (newMode === 'orbit'); 
+                        m.mesh.visible = true; m.body.restitution = 0.6; m.body.frictionAir = 0.001;
+                        Matter.Body.scale(m.body, 1/m.currentScale, 1/m.currentScale); m.mesh.scale.set(1, 1, 1); m.currentScale = 1;
+                        updateMarbleVisual(m);
+                    });
+                    billiardsPockets.forEach(p => { p.visible = false; }); mazeWalls.forEach(w => { w.body.isSensor = true; w.mesh.visible = false; });
+                    pinballElements.forEach(e => { e.body.isSensor = true; e.mesh.visible = false; }); flippers.forEach(f => { f.body.isSensor = true; f.mesh.visible = false; });
+                    koiElements.forEach(e => { e.visible = false; }); engine.gravity.x = 0; engine.gravity.y = 0;
+
+                    if (newMode === 'sandbox') {
+                        marbles.forEach(m => {
+                           Matter.Body.setPosition(m.body, { x: -boxWidth/2 + 1 + Math.random() * (boxWidth - 2), y: -boxHeight/2 + 1 + Math.random() * (boxHeight - 2) });
+                        });
+                    } else if (newMode === 'billiards') {
+                        floorMat.color.setHex(0x1a5e20); billiardsPockets.forEach(p => p.visible = true);
+                        marbles.forEach((m, i) => {
+                            m.body.restitution = 0.9; m.body.frictionAir = 0.015;
+                            if (i === 0) m.material.color.setHex(0xd4af37); else m.material.color.setHex(m.pillarData.color);
+                            m.material.transmission = 0.1;
+                        });
+                        const cue = marbles[0]; Matter.Body.setPosition(cue.body, { x: 0, y: boxHeight/4 });
+                        const r = 0.3; const startY = -boxHeight/4; const hOffset = r * Math.sqrt(3);
+                        const rackPositions = [{x: 0, y: startY}, {x: -r, y: startY - hOffset}, {x: r, y: startY - hOffset}, {x: 0, y: startY - (hOffset * 2)}];
+                        for(let i=1; i<marbles.length; i++) Matter.Body.setPosition(marbles[i].body, rackPositions[i-1]);
+                    } else if (newMode === 'pinball') {
+                        floorMat.color.setHex(0x3e1505); engine.gravity.y = 0.5;
+                        flippers.forEach(f => { f.body.isSensor = false; f.mesh.visible = true; }); pinballElements.forEach(e => { e.body.isSensor = false; e.mesh.visible = true; });
+                        const activeBall = marbles[0]; Matter.Body.scale(activeBall.body, 0.5, 0.5); activeBall.mesh.scale.set(0.5, 0.5, 0.5); activeBall.currentScale = 0.5;
+                        Matter.Body.setPosition(activeBall.body, { x: 0, y: boxHeight/2 - 2.5 });
+                        for (let i = 1; i < marbles.length; i++) { Matter.Body.setPosition(marbles[i].body, { x: 100, y: 100 }); marbles[i].body.isSensor = true; marbles[i].mesh.visible = false; }
+                    } else if (newMode === 'maze') mazeWalls.forEach(w => { w.body.isSensor = false; w.mesh.visible = true; });
+                    else if (newMode === 'koi') {
+                        floorMat.color.setHex(0x111111); koiElements.forEach(e => { e.visible = true; });
+                        const tWidth = Math.min(boxWidth * 0.9, 8); const sX = -tWidth / 2; const step = tWidth / 5;
+                        marbles.forEach((m, i) => {
+                            if (m.pillarData.shape && THREE[m.pillarData.shape]) { m.mesh.geometry.dispose(); m.mesh.geometry = new THREE[m.pillarData.shape](...m.pillarData.args); }
+                            m.body.isSensor = true; const targetX = sX + step * i + (step/2); const targetY = boxHeight/2 - 1.2; 
+                            Matter.Body.setPosition(m.body, { x: targetX, y: targetY });
+                        });
                     }
+                };
+
+                const raycaster = new THREE.Raycaster();
+                const mouseCoords = new THREE.Vector2();
+                let flickState = { active: false, marble: null, startX: 0, startY: 0 };
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                let audioCtx = null;
+
+                window.addEventListener('pointerdown', async (e) => {
+                    if (!audioCtx && AudioContext) { try { audioCtx = new AudioContext(); if (typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission(); } catch(err) {} }
+                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
                     
-                    bgX -= currentBgSpeed;
-                    
-                    // Seamless loop snap-back
-                    if (bgX <= -scaledWidth) {
-                        bgX += scaledWidth;
+                    const wakeScreen = document.getElementById('wake-screen');
+                    if (wakeScreen) {
+                        wakeScreen.style.opacity = 0;
+                        setTimeout(() => wakeScreen.remove(), 800); // Definitively remove
+                        return;
                     }
+
+                    mouseCoords.x = (e.clientX / window.innerWidth) * 2 - 1; mouseCoords.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    raycaster.setFromCamera(mouseCoords, camera);
+                    const activeMarbles = marbles.filter(m => m.mesh.visible).map(m => m.mesh);
+                    const navButtons = insetButtons.map(b => b.mesh);
+                    const intersects = raycaster.intersectObjects([...activeMarbles, ...navButtons]);
+                    if (intersects.length > 0) {
+                        const hitMesh = intersects[0].object;
+                        const navBtn = insetButtons.find(b => b.mesh === hitMesh); 
+                        if (navBtn) { 
+                            if (navBtn.unlocked && !isNavLocked) window.activateMode(navBtn.modeData.id); 
+                            return; 
+                        }
+                        const marble = marbles.find(m => m.mesh === hitMesh); 
+                        if (marble) { 
+                            flickState = { active: true, marble: marble, startX: e.clientX, startY: e.clientY }; 
+                            logHabit(marble); 
+                            return; 
+                        }
+                    }
+                    if (currentMode === 'pinball') { const isLeft = e.clientX < window.innerWidth / 2; flippers.forEach(f => { if (f.isLeft === isLeft) Matter.Body.applyForce(f.body, { x: f.body.position.x + (f.isLeft ? 1 : -1), y: f.body.position.y }, { x: 0, y: -0.06 }); }); }
+                });
+
+                window.addEventListener('pointerup', (e) => {
+                    if (flickState.active && flickState.marble) {
+                        const dx = e.clientX - flickState.startX; const dy = e.clientY - flickState.startY;
+                        if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
+                            let fX = dx * 0.00035; let fY = dy * 0.00035; const maxF = 0.09;
+                            fX = Math.max(-maxF, Math.min(maxF, fX)); fY = Math.max(-maxF, Math.min(maxF, fY));
+                            Matter.Body.applyForce(flickState.marble.body, flickState.marble.body.position, { x: fX, y: fY });
+                        }
+                        flickState.active = false; flickState.marble = null;
+                    }
+                });
+
+                window.addEventListener('deviceorientation', (e) => {
+                    if (currentMode === 'sandbox' || currentMode === 'maze') {
+                        let x = Math.max(-90, Math.min(90, e.gamma || 0)); let y = Math.max(-90, Math.min(90, e.beta || 0));  
+                        engine.gravity.x = (x / 90) * 0.8; engine.gravity.y = (y / 90) * 0.8;
+                    }
+                });
+
+                function playAcousticRipple() { if (!audioCtx) return; const notes = [400, 500, 600, 800, 1200]; notes.forEach((freq, i) => { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1); gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1); gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + i * 0.1 + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.3); osc.start(audioCtx.currentTime + i * 0.1); osc.stop(audioCtx.currentTime + i * 0.1 + 0.3); }); }
+                function playAcousticTap(relS) { if (!audioCtx) return; const vol = Math.max(0.04, Math.min(0.5, relS * 0.045)); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05); if (navigator.vibrate && vol > 0.15) { navigator.vibrate(Math.min(12, relS * 1.8)); } }
+
+                Events.on(engine, 'collisionStart', (event) => { const pairs = event.pairs; for (let i = 0; i < pairs.length; i++) { const { bodyA, bodyB } = pairs[i]; if (bodyA.isSensor || bodyB.isSensor) continue; const relS = (bodyA.speed || 0) + (bodyB.speed || 0); if (relS > 0.6) { playAcousticTap(relS); } } });
+
+                const runner = Runner.create(); Runner.run(runner, engine);
+                
+                function animate() { 
+                    requestAnimationFrame(animate); 
+                    
+                    if (currentMode === 'orbit') {
+                        orbitRotation += 0.005;
+                        marbles.forEach((m, i) => {
+                            const angle = orbitRotation + (i / marbles.length) * (Math.PI * 2);
+                            const targetX = Math.cos(angle) * 3;
+                            const targetY = Math.sin(angle) * 3;
+                            Matter.Body.setPosition(m.body, { x: targetX, y: targetY });
+                        });
+                    }
+
+                    if (currentMode === 'koi') { 
+                        marbles.forEach(m => { m.mesh.rotation.x += 0.004; m.mesh.rotation.y += 0.004; }); 
+                    } 
+                    
+                    marbles.forEach(m => { 
+                        m.mesh.position.x = m.body.position.x; 
+                        m.mesh.position.y = -m.body.position.y; 
+                        if (currentMode !== 'koi') m.mesh.rotation.z = -m.body.angle; 
+                    }); 
+                    
+                    flippers.forEach(f => { f.mesh.position.x = f.body.position.x; f.mesh.position.y = -f.body.position.y; f.mesh.rotation.z = -f.body.angle; }); 
+                    
+                    renderer.render(scene, camera); 
                 }
+                
+                animate(); loadState();
 
-                player.update();
-                player.draw();
-
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    particles[i].update();
-                    particles[i].draw();
-                    if (particles[i].life <= 0) particles.splice(i, 1);
-                }
-
-                // Passive peaceful score increase
-                if (frames % 60 === 0) {
-                    score += 5;
-                    scoreDisplay.innerText = score;
-                    if (score % 100 === 0) gameSpeed += 0.2; // Slowly drift slightly faster
-                }
-
-                frames++;
-            }
-
-            menuAnimate();
-        };
+            } catch (err) { }
+        }
+        if (document.readyState === 'complete' || document.readyState === 'interactive') { initApp(); } else { document.addEventListener('DOMContentLoaded', initApp); }
     </script>
 </body>
 </html>

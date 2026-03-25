@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Origami Wake Up</title>
+    <style>
+        body { margin: 0; background: #fafafa; overflow: hidden; font-family: 'Courier New', monospace; }
+        
+        #sky { width: 100vw; height: 100vh; position: relative; }
+
+        /* The Origami Airship - Starts as B&W Line Drawing */
+        #airship {
+            position: absolute;
+            bottom: 10%;
+            left: 10%;
+            width: 120px;
+            height: 60px;
+            cursor: pointer;
+            transition: background 1.5s ease;
+            
+            /* The Shape */
+            clip-path: polygon(0% 50%, 100% 0%, 75% 50%, 100% 100%);
+            
+            /* Black Outline */
+            filter: drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) 
+                    drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000);
+            
+            background: #fff; /* Initial White Paper */
+            z-index: 10;
+        }
+
+        /* The Cockpit (The click trigger) */
+        #cockpit {
+            position: absolute;
+            top: 35%;
+            left: 40%;
+            width: 15px;
+            height: 15px;
+            border: 2px solid #000;
+            border-radius: 50%;
+            background: #fff;
+        }
+
+        /* Internal Fold Lines */
+        .fold-line {
+            position: absolute;
+            background: #000;
+        }
+        .spine { top: 49%; left: 0; width: 100%; height: 2px; }
+        .wing { top: 0; left: 74%; width: 2px; height: 100%; }
+
+        /* Livery Colors */
+        .color-falcon { background: #5d8aa8 !important; }
+        .color-albatross { background: #e0e0e0 !important; }
+        .color-sparrow { background: #b5651d !important; }
+
+        #prompt-box {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            display: none;
+            background: white;
+            padding: 20px;
+            border: 2px solid #000;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sky">
+    <div id="airship" onclick="wakeUp()">
+        <div class="fold-line spine"></div>
+        <div class="fold-line wing"></div>
+        <div id="cockpit"></div>
+    </div>
+</div>
+
+<div id="prompt-box">
+    <p id="msg"></p>
+</div>
+
+<script>
+    const ship = document.getElementById('airship');
+    const promptBox = document.getElementById('prompt-box');
+    const msg = document.getElementById('msg');
+    let active = false;
+
+    function wakeUp() {
+        if (active) return;
+        active = true;
+
+        // 1. Interaction
+        const name = prompt("Who is the pilot?");
+        const song = prompt("What song shall we fly to?");
+        const bird = prompt("Inspiration? (Falcon, Albatross, or Sparrow)").toLowerCase();
+
+        // 2. Coloring In
+        if (bird.includes('falcon')) ship.classList.add('color-falcon');
+        else if (bird.includes('albatross')) ship.classList.add('color-albatross');
+        else ship.classList.add('color-sparrow');
+
+        // 3. Show Message
+        promptBox.style.display = 'block';
+        msg.innerText = `Pilot: ${name} \n Now Playing: ${song}`;
+
+        // 4. Take Flight & Bob Away
+        startFlight();
+    }
+
+    function startFlight() {
+        let x = 10; // %
+        let y = 10; // %
+        let angle = 0;
+        let time = 0;
+
+        const flightInterval = setInterval(() => {
+            time += 0.05;
+            x += 0.2; // Move right
+            y = 10 + Math.sin(time) * 5; // Bobbing up and down
+            
+            // Gentle tilt based on bobbing
+            let tilt = Math.cos(time) * 5;
+
+            ship.style.left = x + '%';
+            ship.style.bottom = y + '%';
+            ship.style.transform = `rotate(${tilt}deg)`;
+
+            // Fade out message
+            if (x > 25) promptBox.style.opacity = 1 - (x - 25) / 20;
+            
+            // Reset if off screen
+            if (x > 110) {
+                clearInterval(flightInterval);
+                resetShip();
+            }
+        }, 30);
+    }
+
+    function resetShip() {
+        active = false;
+        ship.style.left = '10%';
+        ship.style.bottom = '10%';
+        ship.className = '';
+        promptBox.style.display = 'none';
+        promptBox.style.opacity = 1;
+    }
+</script>
+
+</body>
+</html>

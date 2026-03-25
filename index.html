@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Acorn Aviator - Custom Tethers</title>
+  <title>Acorn Aviator - Tethers and Horizontal Dynamics</title>
   
   <style>
     body, html {
@@ -101,6 +101,7 @@
       const [selectedEmojis, setSelectedEmojis] = useState(["❤️", "👄", "🍑"]); 
       
       const [altitude, setAltitude] = useState(5); // Start on the ground
+      const [shipX, setShipX] = useState(15); // Dynamic horizontal position (5% to 80%)
       const [speed, setSpeed] = useState(0); // Start motionless
       const [balloons, setBalloons] = useState([]);
       const [kites, setKites] = useState([]);
@@ -116,12 +117,13 @@
 
       const startGame = () => {
         if (selectedEmojis.length !== 3) return; // Must pick 3
-        setAltitude(10); // Lifts off ground immediately
-        setSpeed(5); setScore(0);
+        setAltitude(15); // Lifts off ground immediately
+        setSpeed(5); 
+        setShipX(20); // Reset horizontal position
+        setScore(0);
         
-        // Start with one random custom balloon tied on the vertical strip
-        const randomStartEmoji = selectedEmojis[Math.floor(Math.random() * 3)];
-        setBalloons([{ id: Date.now(), emoji: randomStartEmoji }]); 
+        // START WITH 1 OF EACH SELECTED BALLOON tied on the vertical strip
+        setBalloons(selectedEmojis.map(emoji => ({ id: Date.now() + Math.random(), emoji: emoji }))); 
         
         setKites([]); setBanners([]); setSmokeSignals([]);
         setIsLanding(false); setGameState('playing');
@@ -153,6 +155,8 @@
       useEffect(() => {
         if (gameState !== 'playing') return;
         const loop = () => {
+          
+          // Vertical Physics (unchanged)
           setAltitude((prev) => {
             let newAlt;
             if (isLanding) { newAlt = prev - 0.12; } 
@@ -166,6 +170,22 @@
             return newAlt;
           });
 
+          // Horizontal Dynamics (New)
+          // Kites pull ship right, Banners drag ship left
+          setShipX((prevX) => {
+              if (isLanding) return prevX; // Maintain position during landing sequence
+              
+              const basePos = 20; // Default position
+              const kiteForce = kites.length * 1.5; // Kites pull right (max 37.5)
+              const bannerDrag = banners.length * 2.0; // Banners drag left (max 50)
+              
+              const calculatedX = basePos + (kiteForce - bannerDrag);
+              
+              // Boundaries: Don't go past 5% left or 75% right
+              return Math.max(5, Math.min(75, calculatedX)); 
+          });
+
+          // Vertical Speed (unchanged)
           setSpeed((prev) => {
             if (isLanding) return Math.max(1, prev - 0.03); 
             const propulsion = kites.length * 2.0;
@@ -200,7 +220,8 @@
         <div style={{ 
           width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', 
           backgroundImage: `url(${bgImageUrl})`, backgroundSize: 'auto 100%', 
-          backgroundRepeat: 'repeat-x', backgroundPosition: `-${score * 35}px center`, 
+          backgroundRepeat: 'repeat-x', 
+          backgroundPosition: `-${score * 10}px center`, // Slow scroll speed (changed from 35)
           transition: 'background-position 0.1s linear'
         }}>
           
@@ -253,7 +274,18 @@
 
           {/* GAMEPLAY */}
           {gameState === 'playing' && (
-            <div className={balloons.length === 0 ? "sway-effect" : ""} style={{ position: 'absolute', left: '30%', bottom: `${altitude}%`, display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'bottom 0.2s linear' }}>
+            <div 
+                className={balloons.length === 0 ? "sway-effect" : ""} 
+                style={{ 
+                    position: 'absolute', 
+                    left: `${shipX}%`, // Use dynamic horizontal position
+                    bottom: `${altitude}%`, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    transition: 'bottom 0.2s linear, left 0.2s linear' // Smooth horizontal movement
+                }}
+            >
               
               {/* Trailing balloons strip same as banner/kites */}
               <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
@@ -263,25 +295,44 @@
                   ))}
                 </div>
 
-                {/* Trail Banners (Same strip rendering style) */}
+                {/* Trail Banners (Same strip rendering style - dragging left) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginRight: '15px', alignItems: 'flex-end' }}>
-                  {banners.map((b) => (
-                    <div key={b.id} style={{ backgroundColor: '#FFF9E6', border: '1px solid #E2C792', padding: '8px 12px', borderRadius: '4px 12px 12px 4px', fontSize: '1rem', color: '#000', fontFamily: "'Permanent Marker', cursive", boxShadow: '3px 3px 6px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>{b.text}</div>
-                  ))}
+                    {banners.map((b, index) => (
+                        <div key={b.id} style={{ 
+                            backgroundColor: '#FFF9E6', 
+                            border: '1px solid #E2C792', 
+                            padding: '8px 12px', 
+                            borderRadius: '4px 12px 12px 4px', 
+                            fontSize: '1rem', 
+                            color: '#000', 
+                            fontFamily: "'Permanent Marker', cursive", 
+                            boxShadow: '3px 3px 6px rgba(0,0,0,0.2)', 
+                            whiteSpace: 'nowrap',
+                            // The further back, the more it drops visually (dragging down and left)
+                            marginTop: `${index * 5}px` 
+                        }}>
+                            {b.text}
+                        </div>
+                    ))}
+                    {/* The horizontal rope connecting banners to ship */}
+                    {banners.length > 0 && <div style={{ width: '40px', background: 'rgba(255,255,255,0.6)', height: '2px', position: 'absolute', right: '-40px', top: '15px' }}></div>}
                 </div>
 
                 {/* THE SHIP */}
                 <img src={shipImageUrl} style={{ height: '110px', zIndex: 20, filter: 'drop-shadow(2px 5px 8px rgba(0,0,0,0.4))' }} />
 
-                {/* Trail Kites (Same strip rendering style) */}
+                {/* Trail Kites (Same strip rendering style - pulling right) */}
                 {kites.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '-10px' }}>
-                    <div style={{ width: '30px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)' }}></div>
-                    <div style={{ display: 'flex', gap: '2px', fontSize: '1.8rem' }}>{kites.map((k) => <span key={k.id}>🪁</span>)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '-10px', position: 'relative' }}>
+                    {/* The horizontal rope pulling right */}
+                    <div style={{ width: '50px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)' }}></div>
+                    <div style={{ display: 'flex', gap: '2px', fontSize: '1.8rem', position: 'absolute', left: '40px' }}>
+                        {kites.map((k) => <span key={k.id}>🪁</span>)}
+                    </div>
                   </div>
                 )}
                 
-                {/* NEW: TRAILING EMOJI BALLOONS STRIP (Vertical strip same style) */}
+                {/* TRAILING EMOJI BALLOONS STRIP (Vertical strip same style) */}
                 {balloons.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'absolute', left: '10px', top: '100px', marginTop: '10px' }}>
                         {/* The Rope/Strip connecting them all */}

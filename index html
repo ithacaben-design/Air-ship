@@ -2,151 +2,145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Origami Wake Up</title>
+    <title>Origami Scout: Drift</title>
     <style>
-        body { margin: 0; background: #fafafa; overflow: hidden; font-family: 'Courier New', monospace; }
-        
-        #sky { width: 100vw; height: 100vh; position: relative; }
+        body { margin: 0; background: #f0f4f8; overflow: hidden; font-family: 'Courier New', monospace; }
+        #world { width: 100vw; height: 100vh; position: relative; background: linear-gradient(#b3e5fc, #e1f5fe); }
 
-        /* The Origami Airship - Starts as B&W Line Drawing */
-        #airship {
-            position: absolute;
-            bottom: 10%;
-            left: 10%;
-            width: 120px;
-            height: 60px;
-            cursor: pointer;
-            transition: background 1.5s ease;
-            
-            /* The Shape */
+        /* The Fire Tower */
+        #tower {
+            position: absolute; bottom: 0; left: 80px;
+            width: 40px; height: 200px; border: 2px solid #000;
+            background: #fff; z-index: 5;
+        }
+        #tower::before { content: ''; position: absolute; top: -20px; left: -10px; width: 60px; height: 20px; border: 2px solid #000; background: #fff; }
+
+        /* The Airship (Starts B&W) */
+        #ship {
+            position: absolute; bottom: 205px; left: 50px;
+            width: 90px; height: 45px;
             clip-path: polygon(0% 50%, 100% 0%, 75% 50%, 100% 100%);
-            
-            /* Black Outline */
-            filter: drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000) 
-                    drop-shadow(0 2px 0 #000) drop-shadow(0 -2px 0 #000);
-            
-            background: #fff; /* Initial White Paper */
-            z-index: 10;
+            background: #fff; border: 2px solid #000;
+            filter: drop-shadow(2px 2px 0 #000);
+            z-index: 20; cursor: pointer; transition: background 1.5s;
+        }
+        .fold { position: absolute; background: #000; }
+        .s-line { top: 49%; left: 0; width: 100%; height: 2px; }
+
+        /* Tethers & Gear */
+        .tether { position: absolute; width: 1.5px; background: #000; height: 40px; top: -40px; left: 50%; transform-origin: bottom; }
+        .balloon { position: absolute; width: 22px; height: 28px; background: #ff5252; border: 2px solid #000; border-radius: 50%; top: -65px; left: calc(50% - 11px); }
+        .kite-tether { position: absolute; width: 30px; height: 1.5px; background: #000; left: -30px; top: 50%; }
+        .kite { position: absolute; width: 20px; height: 20px; background: #fff; border: 2px solid #000; transform: rotate(45deg); left: -50px; top: calc(50% - 10px); }
+
+        /* Drifting Smoke */
+        .smoke {
+            position: absolute; pointer-events: none;
+            font-weight: bold; font-size: 32px;
+            animation: driftAway 6s ease-out forwards;
         }
 
-        /* The Cockpit (The click trigger) */
-        #cockpit {
-            position: absolute;
-            top: 35%;
-            left: 40%;
-            width: 15px;
-            height: 15px;
-            border: 2px solid #000;
-            border-radius: 50%;
-            background: #fff;
+        @keyframes driftAway {
+            0% { transform: translate(0, 0) scale(1); opacity: 0; }
+            10% { opacity: 0.8; }
+            100% { transform: translate(40px, -250px) scale(2); opacity: 0; }
         }
 
-        /* Internal Fold Lines */
-        .fold-line {
-            position: absolute;
-            background: #000;
+        /* Controls */
+        #ui { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); display: none; gap: 20px; }
+        button { 
+            padding: 12px 20px; border: 3px solid #000; background: #fff; 
+            cursor: pointer; font-family: 'Courier New'; font-weight: bold;
         }
-        .spine { top: 49%; left: 0; width: 100%; height: 2px; }
-        .wing { top: 0; left: 74%; width: 2px; height: 100%; }
-
-        /* Livery Colors */
-        .color-falcon { background: #5d8aa8 !important; }
-        .color-albatross { background: #e0e0e0 !important; }
-        .color-sparrow { background: #b5651d !important; }
-
-        #prompt-box {
-            position: absolute;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
-            display: none;
-            background: white;
-            padding: 20px;
-            border: 2px solid #000;
-        }
+        button:hover { background: #000; color: #fff; }
     </style>
 </head>
 <body>
 
-<div id="sky">
-    <div id="airship" onclick="wakeUp()">
-        <div class="fold-line spine"></div>
-        <div class="fold-line wing"></div>
-        <div id="cockpit"></div>
-    </div>
+<div id="world">
+    <div id="tower"></div>
+    <div id="ship" onclick="wakeUp()"><div class="fold s-line"></div></div>
 </div>
 
-<div id="prompt-box">
-    <p id="msg"></p>
+<div id="ui">
+    <button onclick="deploy('kite')">🪁 KITE</button>
+    <button onclick="deploy('balloon')">🎈 BALLOON</button>
+    <button onclick="signalReturn()">🔥 LAND</button>
 </div>
 
 <script>
-    const ship = document.getElementById('airship');
-    const promptBox = document.getElementById('prompt-box');
-    const msg = document.getElementById('msg');
-    let active = false;
+    const ship = document.getElementById('ship');
+    const ui = document.getElementById('ui');
+    let x = 50, y = 205, speed = 0, vy = 0, gravity = 0.1, lift = 0.1, isFlying = false;
 
     function wakeUp() {
-        if (active) return;
-        active = true;
+        if (isFlying) return;
+        const pilot = prompt("Pilot Name?");
+        const song = prompt("Song?");
+        const bird = prompt("Bird inspiration? (Falcon, Albatross, Sparrow)").toLowerCase();
+        
+        // Color in based on bird
+        if(bird.includes('fal')) ship.style.background = '#455a64';
+        else if(bird.includes('alb')) ship.style.background = '#e0e0e0';
+        else ship.style.background = '#795548';
 
-        // 1. Interaction
-        const name = prompt("Who is the pilot?");
-        const song = prompt("What song shall we fly to?");
-        const bird = prompt("Inspiration? (Falcon, Albatross, or Sparrow)").toLowerCase();
-
-        // 2. Coloring In
-        if (bird.includes('falcon')) ship.classList.add('color-falcon');
-        else if (bird.includes('albatross')) ship.classList.add('color-albatross');
-        else ship.classList.add('color-sparrow');
-
-        // 3. Show Message
-        promptBox.style.display = 'block';
-        msg.innerText = `Pilot: ${name} \n Now Playing: ${song}`;
-
-        // 4. Take Flight & Bob Away
-        startFlight();
+        ui.style.display = 'flex';
+        isFlying = true;
+        speed = 2.5;
+        requestAnimationFrame(flightLoop);
     }
 
-    function startFlight() {
-        let x = 10; // %
-        let y = 10; // %
-        let angle = 0;
-        let time = 0;
-
-        const flightInterval = setInterval(() => {
-            time += 0.05;
-            x += 0.2; // Move right
-            y = 10 + Math.sin(time) * 5; // Bobbing up and down
-            
-            // Gentle tilt based on bobbing
-            let tilt = Math.cos(time) * 5;
-
-            ship.style.left = x + '%';
-            ship.style.bottom = y + '%';
-            ship.style.transform = `rotate(${tilt}deg)`;
-
-            // Fade out message
-            if (x > 25) promptBox.style.opacity = 1 - (x - 25) / 20;
-            
-            // Reset if off screen
-            if (x > 110) {
-                clearInterval(flightInterval);
-                resetShip();
-            }
-        }, 30);
+    function deploy(type) {
+        if (type === 'balloon') {
+            const b = document.createElement('div'); b.className = 'balloon';
+            const t = document.createElement('div'); t.className = 'tether';
+            ship.appendChild(t); ship.appendChild(b);
+            lift += 0.15; speed *= 0.85;
+        } else {
+            const k = document.createElement('div'); k.className = 'kite';
+            const kt = document.createElement('div'); kt.className = 'kite-tether';
+            ship.appendChild(kt); ship.appendChild(k);
+            speed += 1.5; lift -= 0.05;
+        }
     }
 
-    function resetShip() {
-        active = false;
-        ship.style.left = '10%';
-        ship.style.bottom = '10%';
-        ship.className = '';
-        promptBox.style.display = 'none';
-        promptBox.style.opacity = 1;
+    function signalReturn() {
+        speed = -2.5;
+        const msg = ["I", "MISS", "YOU"];
+        msg.forEach((word, i) => {
+            setTimeout(() => {
+                const s = document.createElement('div');
+                s.className = 'smoke';
+                s.innerText = word;
+                s.style.left = (x + 20) + 'px';
+                s.style.bottom = (y + 40) + 'px';
+                s.style.color = (i === 1) ? '#ff80ab' : '#9e9e9e'; // Pink for 'MISS', Grey for others
+                document.getElementById('world').appendChild(s);
+                setTimeout(() => s.remove(), 6000);
+            }, i * 800);
+        });
+    }
+
+    function flightLoop() {
+        if (!isFlying) return;
+        vy -= gravity;
+        y += (vy + lift);
+        x += speed;
+
+        if (y < 0) { y = 0; vy = 0; }
+        
+        ship.style.left = x + 'px';
+        ship.style.bottom = y + 'px';
+        ship.style.transform = `rotate(${-vy * 3}deg) scaleX(${speed < 0 ? -1 : 1})`;
+
+        // Re-docking at the tower
+        if (speed < 0 && x <= 50) {
+            speed = 0;
+            y = 205;
+            vy = 0;
+        }
+        requestAnimationFrame(flightLoop);
     }
 </script>
-
 </body>
 </html>

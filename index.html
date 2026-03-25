@@ -1,14 +1,716 @@
-<!-- ... existing code ... -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Airship Afternoon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* CORE LAYOUT */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #3e4a3d; /* Cool shade */
+            font-family: 'Lora', serif; /* Linen-esque readable font */
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e8dcc8; /* Warm afternoon linen fallback */
+        }
+
+        #vibe-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 2;
+            background: radial-gradient(circle at 70% 30%, rgba(255, 215, 120, 0.25) 0%, rgba(50, 70, 50, 0.4) 100%);
+            mix-blend-mode: hard-light;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            filter: sepia(0.15) contrast(1.05) brightness(1.05); /* Sunwarmed skin aesthetic */
+        }
+
+        /* UI OVERLAYS */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(45, 55, 45, 0.5); /* Cool shade overlay */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            color: #f4efeb; /* Linen white */
+            text-align: center;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Caveat', cursive; /* Script font */
+            font-size: clamp(3rem, 10vw, 6rem);
+            margin-bottom: 5px;
+            color: #fdf5e6;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+            letter-spacing: 2px;
+        }
+
+        .setup-panel {
+            background: rgba(244, 239, 235, 0.95); /* Linen */
+            padding: 25px;
+            border: 2px solid #8c7a6b; /* Mushroom brown */
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            pointer-events: auto;
+            color: #4a3e35;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .input-group label {
+            font-family: 'Caveat', cursive;
+            font-size: 1.6rem;
+            color: #5c4b3a;
+            margin-bottom: 2px;
+        }
+
+        .input-group input {
+            background: #fdfaf6;
+            border: 1px solid #b8a99a;
+            color: #4a3e35;
+            padding: 10px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            font-family: 'Lora', serif;
+            text-align: center;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            box-shadow: 0 0 8px rgba(140, 122, 107, 0.6);
+            border-color: #8c7a6b;
+        }
+
+        .btn {
+            background: #8c7a6b; /* Mushroom */
+            border: 2px solid #5c4b3a;
+            color: #f4efeb;
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            font-family: 'Lora', serif;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            pointer-events: auto;
+        }
+
+        .btn:hover {
+            background: #5c4b3a;
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(to bottom, rgba(70,80,60,0.8), transparent); /* Shade gradient */
+            color: #fdf5e6;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+        }
+
+        .status-warn { color: #e9c46a !important; }
+        .status-crit { color: #e76f51 !important; }
+
+        #banner-btn {
+            background: rgba(244, 239, 235, 0.8);
+            color: #5c4b3a;
+            border: 2px solid #8c7a6b;
+            padding: 5px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            pointer-events: auto;
+            font-size: 1.5rem;
+            transition: all 0.3s;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        #banner-btn:active {
+            background: #d4c7b8;
+        }
+
+        #banner-btn.available {
+            background: rgba(255, 240, 200, 0.9);
+            animation: pulseBanner 2s infinite alternate;
+            border-color: #d4a373;
+        }
+
+        @keyframes pulseBanner {
+            from { box-shadow: 0 0 5px rgba(212, 163, 115, 0.4); transform: scale(1); }
+            to { box-shadow: 0 0 15px rgba(212, 163, 115, 0.8); transform: scale(1.05); }
+        }
+
+        /* MOBILE CONTROLS HINT */
+        #controls-hint {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Caveat', cursive;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            pointer-events: none;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="vibe-overlay"></div>
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui-layer">
+            <div id="hud" class="hidden">
+                <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                    <div>SCORE: <span id="scoreDisplay">0</span></div>
+                    <div style="font-size: 0.9rem; color: #e8dcc8; font-family: 'Caveat', cursive; font-size: 1.6rem;">PILOT: <span id="pilotDisplay" style="color:#fdf5e6;">___</span></div>
+                </div>
+                
+                <div style="text-align:center;">
+                    <button id="banner-btn" class="available">📜</button>
+                    <!-- EMOJI BALLOON ADDER -->
+                    <div id="emoji-adder" style="margin-top:8px; display:flex; justify-content:center; gap:5px; pointer-events:auto;">
+                        <input type="text" id="emoji-input" placeholder="🍄" maxlength="3" style="width: 45px; text-align: center; background: rgba(244, 239, 235, 0.9); color: #4a3e35; border: 1px solid #8c7a6b; border-radius: 4px; font-size: 1.2rem;">
+                        <button id="add-balloon-btn" style="background: #e8dcc8; color: #000; border: 1px solid #8c7a6b; border-radius: 4px; padding: 0 10px; cursor: pointer; text-shadow: none; font-size: 1.5rem; box-shadow: 1px 1px 0px rgba(0,0,0,0.3);">🎈</button>
+                        <button id="add-kite-btn" style="background: #fdfaf6; color: #000; border: 1px solid #8c7a6b; border-radius: 4px; padding: 0 10px; cursor: pointer; text-shadow: none; box-shadow: 1px 1px 0px rgba(0,0,0,0.3); font-size: 1.5rem;">🪁</button>
+                    </div>
+                    <div style="font-size:0.8rem; margin-top:5px; color:#e8dcc8;">INTEGRITY: <span id="integrityDisplay">100%</span></div>
+                </div>
+                <div>ALTITUDE: <span id="altDisplay">1200</span> FT</div>
+            </div>
+
+            <div id="start-screen" class="screen">
+                <h1>Airship Afternoon</h1>
+                
+                <div class="setup-panel">
+                    <div class="input-group">
+                        <label>Enter Pilot Name:</label>
+                        <input type="text" id="setup-name" placeholder="Captain Acorn" maxlength="15">
+                    </div>
+                    <div class="input-group">
+                        <label>Select 3 Starting Emojis:</label>
+                        <input type="text" id="setup-emojis" placeholder="🍄🍃🦋" maxlength="10">
+                    </div>
+                </div>
+
+                <p style="font-family: 'Caveat', cursive; font-size: 1.8rem; margin-bottom: 20px;">Hold Space or Touch to catch the wind</p>
+                <button class="btn" id="start-btn">Untie & Launch</button>
+            </div>
+
+            <div id="game-over-screen" class="screen hidden" style="background: rgba(45, 55, 45, 0.85);">
+                <h1 style="color: #e76f51;">Winded</h1>
+                <h2 id="fail-reason" style="font-family: 'Lora', serif; color: #fdf5e6; margin-bottom: 20px; font-size: 1.5rem;"></h2>
+                <p style="font-family: 'Caveat', cursive; font-size: 2rem;">Final Score: <span id="final-score" style="color:#fdf5e6; font-weight:bold;">0</span></p>
+                <button class="btn" id="restart-btn">Rest & Retry</button>
+            </div>
+            
+            <div id="controls-hint" class="hidden">
+                [ HOLD TO GLIDE ]
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // UI Elements
+            const startScreen = document.getElementById('start-screen');
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const hud = document.getElementById('hud');
+            const controlsHint = document.getElementById('controls-hint');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const altDisplay = document.getElementById('altDisplay');
+            const integrityDisplay = document.getElementById('integrityDisplay');
+            const pilotDisplay = document.getElementById('pilotDisplay');
+            const finalScoreDisplay = document.getElementById('final-score');
+            const failReasonDisplay = document.getElementById('fail-reason');
+            const startBtn = document.getElementById('start-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const bannerBtn = document.getElementById('banner-btn');
+            
+            // Inputs
+            const emojiInput = document.getElementById('emoji-input');
+            const addBalloonBtn = document.getElementById('add-balloon-btn');
+            const addKiteBtn = document.getElementById('add-kite-btn');
+            const setupNameInput = document.getElementById('setup-name');
+            const setupEmojisInput = document.getElementById('setup-emojis');
+
+            // Game Assets
+            const shipImg = new Image();
+            shipImg.src = 'airship.png'; 
+            
+            const bgImg = new Image();
+            bgImg.src = 'background.jpg';
+
+            // User's Banner Messages
+            const bannerMessages = [
+                "", // State 0: No Banner
+                "We Love you _______ ",
+                " ________ thank you",
+                "i see you _______working hard ",
+                "I appreciate you ___________ ",
+                "I Love You ________With all my blood "
+            ];
+            let currentBannerIdx = 0;
+
+            // Game State Constants
+            const STATE = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
+            let currentState = STATE.MENU;
+
+            // Game Variables
+            let frames = 0;
+            let score = 0;
+            let bgX = 0;
+            let gameSpeed = 3;
+            let isThrusting = false;
+            let animationId;
+            let menuAnimationId;
+            
+            // Entities
+            let player;
+            let obstacles = [];
+            let particles = [];
+
+            // Handle Resize
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Classes
+            class Player {
+                constructor() {
+                    // Normal playing size
+                    this.width = Math.min(canvas.width * 0.15, 120);
+                    this.height = this.width * 0.75;
+                    this.x = Math.min(canvas.width * 0.3, 300); // Starting position
+                    this.y = canvas.height / 2 - this.height / 2;
+                    
+                    this.hitbox = {
+                        offsetX: this.width * 0.1, 
+                        offsetY: this.height * 0.15,
+                        w: this.width * 0.8, 
+                        h: this.height * 0.7
+                    };
+
+                    this.vy = 0;
+                    this.vx = 0;
+                    this.gravity = 0.18;
+                    this.thrustY = -0.4;
+                    this.thrustX = 0.25; // Forward thrust to fight the banner drag
+                    this.drag = 0.96;
+                    
+                    this.kiteDamage = 0; // 0 to 1
+                    this.damagePullDir = 1; // 1 (down) or -1 (up)
+
+                    this.customBalloons = []; // Array for tied emojis
+                    this.kites = []; // Array for origami kites
+                }
+
+                takeDamage(amount, dir) {
+                    this.kiteDamage = Math.min(1, this.kiteDamage + amount);
+                    this.damagePullDir = dir;
+                    // Visual screen flash for taking damage
+                    canvas.style.filter = 'sepia(1) hue-rotate(-50deg) saturate(3)';
+                    setTimeout(() => canvas.style.filter = 'none', 150);
+                }
+
+                addBalloon(emojiChar) {
+                    this.customBalloons.push({
+                        emoji: emojiChar,
+                        // Set a target position clumping up and behind the ship
+                        tX: -20 - Math.random() * 80, 
+                        tY: -40 - Math.random() * 60,
+                        x: 0, // start at ship
+                        y: 0,
+                        phase: Math.random() * Math.PI * 2 // for random swaying
+                    });
+                    
+                    // Added bonus: Every balloon gives a tiny bit of extra lift!
+                    this.thrustY = Math.max(-0.6, this.thrustY - 0.015);
+                }
+
+                addKite() {
+                    const kiteTypes = ['diamond', 'airplane', 'crane'];
+                    const kType = kiteTypes[this.kites.length % 3];
+                    
+                    this.kites.push({
+                        type: kType,
+                        tX: 0, // target calculated dynamically in update() to stack them
+                        tY: 0, 
+                        x: this.width/2, // start at front of ship
+                        y: 0,
+                        phase: Math.random() * Math.PI * 2 // for random swaying
+                    });
+                }
+
+                update() {
+                    // Banner Drag Mechanics
+                    let bannerDragX = currentBannerIdx > 0 ? -0.2 : -0.02; // Strong pull left if deployed
+                    
+                    // Damaged Kites Mechanics (Uneven Physics)
+                    let damagePullY = this.kiteDamage * 0.3 * this.damagePullDir;
+                    let damageDragX = this.kiteDamage * -0.15; // Extra left pull from damage
+
+                    // Origami Kites: Pull strictly FORWARD (right) to fight the drag!
+                    let origamiKiteThrust = this.kites.length * 0.035;
+
+                    if (isThrusting) {
+                        this.vy += this.thrustY;
+                        this.vx += this.thrustX;
+                        // Particles
+                        if (frames % 3 === 0) {
+                            particles.push(new Particle(this.x + this.width*0.1, this.y + this.height*0.8));
+                        }
+                    } else {
+                        this.vy += this.gravity + damagePullY;
+                    }
+                    
+                    // Add all horizontal forces (drag pulling left, kites pulling right)
+                    this.vx += bannerDragX + damageDragX + origamiKiteThrust;
+
+                    this.vy *= this.drag;
+                    this.vx *= this.drag;
+                    
+                    this.y += this.vy;
+                    this.x += this.vx;
+
+                    // Bounds X limits
+                    let maxX = canvas.width * 0.5; // Max runway center screen
+                    if (this.x > maxX) {
+                        this.x = maxX;
+                        this.vx = 0;
+                    }
+                    if (this.x < -this.width) {
+                        triggerGameOver("DRAGGED OFF COURSE!");
+                    }
+
+                    // Floor / Ceiling bounds now cause damage instead of instant death
+                    if (this.y < 0) {
+                        this.y = 0;
+                        this.vy = Math.abs(this.vy) * 0.6; // Bounce down
+                        if (frames % 10 === 0) this.takeDamage(0.1, 1);
+                    }
+                    if (this.y + this.height > canvas.height) {
+                        this.y = canvas.height - this.height;
+                        this.vy = -Math.abs(this.vy) * 0.6; // Bounce up
+                        if (frames % 10 === 0) this.takeDamage(0.1, -1);
+                    }
+
+                    // Update Custom Balloons physics
+                    this.customBalloons.forEach(b => {
+                        // Drag them left when ship accelerates forward
+                        let windPullX = -this.vx * 15; 
+                        
+                        // Sway mechanics
+                        let swayX = Math.sin(frames * 0.05 + b.phase) * 10;
+                        let swayY = Math.cos(frames * 0.04 + b.phase) * 5;
+
+                        let targetX = b.tX + windPullX + swayX;
+                        let targetY = b.tY + swayY;
+
+                        // Spring formula for bouncy attachment
+                        b.x += (targetX - b.x) * 0.1;
+                        b.y += (targetY - b.y) * 0.1;
+                    });
+                    
+                    // Update Origami Kites physics
+                    this.kites.forEach((k, index) => {
+                        // Stack each kite above and ahead of the previous
+                        k.tX = this.width/2 + 30 + (index * 45);
+                        k.tY = -this.height/2 - 20 - (index * 30);
+                        
+                        // Kites cut through the wind better than balloons
+                        let windPullX = -this.vx * 3; 
+                        
+                        // Sway mechanics
+                        let swayX = Math.sin(frames * 0.06 + k.phase) * 12;
+                        let swayY = Math.cos(frames * 0.05 + k.phase) * 6;
+
+                        let targetX = k.tX + windPullX + swayX;
+                        let targetY = k.tY + swayY;
+
+                        k.x += (targetX - k.x) * 0.12;
+                        k.y += (targetY - k.y) * 0.12;
+                    });
+
+                    // Update HUD Readouts
+                    let visualAlt = Math.floor(2500 - ((this.y / canvas.height) * 2000));
+                    altDisplay.innerText = visualAlt;
+                    
+                    let integrityPct = Math.floor((1 - this.kiteDamage) * 100);
+                    integrityDisplay.innerText = integrityPct + "%";
+                    if (integrityPct < 40) integrityDisplay.className = 'status-crit';
+                    else if (integrityPct < 70) integrityDisplay.className = 'status-warn';
+                    else integrityDisplay.className = '';
+                }
+
+                draw() {
+                    ctx.save();
+                    // Move to center of ship for rotation
+                    ctx.translate(this.x + this.width/2, this.y + this.height/2);
+                    
+                    // Pitch based on velocity
+                    let targetRotation = this.vy * 0.05;
+                    ctx.rotate(targetRotation);
+
+                    // --- DRAW KITE DAMAGE / FRAYED STRINGS ---
+                    if (this.kiteDamage > 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, -this.height/2);
+                        ctx.lineTo(10 + Math.random()*20, -this.height - Math.random()*20);
+                        ctx.strokeStyle = `rgba(255, ${255 - this.kiteDamage*255}, 0, 0.8)`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    // --- DRAW TRAILING BANNER ---
+                    if (currentBannerIdx > 0) {
+                        let msg = bannerMessages[currentBannerIdx];
+                        ctx.save();
+                        // Banner Font settings
+                        ctx.font = "bold 14px Arial";
+                        let textMetrics = ctx.measureText(msg);
+                        let padding = 30;
+                        let bannerWidth = textMetrics.width + padding;
+                        let bannerHeight = 30;
+                        let stringLength = 40; // Distance behind the ship
+
+                        // Calculate banner coordinates
+                        let bannerX = -this.width/2 - stringLength - bannerWidth;
+                        let bannerY = -bannerHeight/2;
+                        
+                        // Draw towing string
+                        ctx.beginPath();
+                        ctx.moveTo(-this.width/2 + 10, 0); // Attach near tail
+                        ctx.lineTo(bannerX + bannerWidth, 0);
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        // Draw banner background
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+                        ctx.fillRect(bannerX, bannerY, bannerWidth, bannerHeight);
+                        ctx.strokeStyle = "#ffcc00"; // Golden border
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(bannerX, bannerY, bannerWidth, bannerHeight);
+
+                        // Draw banner text
+                        ctx.fillStyle = "#000";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(msg, bannerX + bannerWidth/2, 0);
+                        
+                        ctx.restore();
+                    }
+                    // --- END BANNER ---
+
+                    // --- DRAW CUSTOM TYPED EMOJI BALLOONS ---
+                    ctx.save();
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                    
+                    // First draw all the strings
+                    this.customBalloons.forEach(b => {
+                        ctx.beginPath();
+                        ctx.moveTo(-this.width/4, -this.height/4); // attach string to top back of ship
+                        ctx.lineTo(b.x, b.y);
+                        ctx.stroke();
+                    });
+
+                    // Then draw all the shiny balloons on top of strings
+                    this.customBalloons.forEach(b => {
+                        ctx.save();
+                        ctx.translate(b.x, b.y);
+                        
+                        // Angle balloon slightly based on its drag
+                        let rot = (b.x - b.tX) * 0.02;
+                        ctx.rotate(rot);
+
+                        // Glow effect
+                        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+                        ctx.shadowBlur = 15;
+                        ctx.font = "40px Arial";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(b.emoji, 0, 0);
+
+                        // Shiny Gloss Overlay (Mylar effect)
+                        ctx.shadowBlur = 0; 
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                        ctx.beginPath();
+                        ctx.ellipse(-8, -12, 12, 6, Math.PI/5, 0, Math.PI*2);
+                        ctx.fill();
+
+                        ctx.restore();
+                    });
+                    ctx.restore();
+                    // --- END CUSTOM BALLOONS ---
+
+                    // --- DRAW ORIGAMI KITES ---
+                    ctx.save();
+                    this.kites.forEach(k => {
+                        // Draw string from front-top of ship
+                        ctx.beginPath();
+                        ctx.moveTo(this.width/3, -this.height/6);
+                        ctx.lineTo(k.x, k.y);
+                        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+
+                        ctx.save();
+                        ctx.translate(k.x, k.y);
+                        
+                        // Tilt kite slightly upward and forward
+                        let rot = (k.x - k.tX) * 0.01 + 0.3; 
+                        ctx.rotate(rot);
+
+                        // Draw Tail (Behind kite)
+                        ctx.beginPath();
+                        ctx.moveTo(0, 5); // Start at bottom of kite
+                        ctx.quadraticCurveTo(-15, 15, -5, 25);
+                        ctx.quadraticCurveTo(10, 35, -10, 45);
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        
+                        // Tiny ribbon bows on the tail
+                        ctx.fillStyle = '#ffffff';
+                        let drawBow = (bx, by) => {
+                            ctx.beginPath();
+                            ctx.moveTo(bx, by); ctx.lineTo(bx - 3, by - 3); ctx.lineTo(bx - 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
+                            ctx.beginPath();
+                            ctx.moveTo(bx, by); ctx.lineTo(bx + 3, by - 3); ctx.lineTo(bx + 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
+                        };
+                        drawBow(-8, 18);
+                        drawBow(1, 32);
+                        drawBow(-5, 42);
+
+                        // Origami Kite Base Styles
+                        ctx.fillStyle = '#ffffff'; // All white
+                        ctx.strokeStyle = '#000000'; // Black folds
+                        ctx.lineWidth = 1.5;
+                        
+                        if (k.type === 'diamond') {
+                            ctx.beginPath();
+                            ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0);
+                            ctx.closePath();
+                            ctx.fill(); ctx.stroke();
+                            // Folds
+                            ctx.beginPath();
+                            ctx.moveTo(0, -12); ctx.lineTo(0, 12); // Vertical fold
+                            ctx.moveTo(-8, 0); ctx.lineTo(8, 0);   // Horizontal fold
+                            ctx.stroke();
+                        } else if (k.type === 'airplane') {
+                            ctx.beginPath();
+                            ctx.moveTo(15, 0); ctx.lineTo(-10, -8); ctx.lineTo(-5, 0); ctx.lineTo(-10, 8);
+                            ctx.closePath();
+                            ctx.fill(); ctx.stroke();
+                            // Folds
+                            ctx.beginPath();
+                            ctx.moveTo(15, 0); ctx.lineTo(-5, 0); // Center fold
+                            ctx.stroke();
+                        } else if (k.type === 'crane') {
+                            ctx.beginPath();
+                            ctx.moveTo(0, 5); ctx.lineTo(12, -8); ctx.lineTo(8, -2); ctx.lineTo(-5, -15); ctx.lineTo(-2, -2); ctx.lineTo(-12, -8);
+                            ctx.closePath();
+                            ctx.fill(); ctx.stroke();
+                            // Folds
+                            ctx.beginPath();
+                            ctx.moveTo(0, 5); ctx.lineTo(8, -2); // Neck line
+                            ctx.moveTo(0, 5); ctx.lineTo(-2, -2); // Tail base line
+                            ctx.moveTo(0, 5); ctx.lineTo(-5, -15); // Main wing fold
+                            ctx.stroke();
+                        }
+
+                        ctx.restore();
+                    });
+                    ctx.restore();
+                    // --- END ORIGAMI KITES ---
+
+                    // Draw actual ship image or fallback
                     if (shipImg.complete && shipImg.naturalWidth > 0) {
                         ctx.drawImage(shipImg, -this.width/2, -this.height/2, this.width, this.height);
                     } else {
-                        // Fallback geometry
                         ctx.fillStyle = '#A0522D';
                         ctx.beginPath();
                         ctx.ellipse(0, 0, this.width/2.5, this.height/3, 0, 0, Math.PI*2);
                         ctx.fill();
                         
-                        // Emoji Balloon Fallback
                         ctx.font = `${this.height}px Arial`;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
@@ -26,15 +728,19 @@
                     this.vy = (Math.random() - 0.5) * 1;
                     this.life = 1.0;
                     this.decay = Math.random() * 0.02 + 0.02;
-                    this.size = Math.random() * 5 + 3;
+                    this.size = Math.random() * 4 + 2;
                 }
                 update() {
-                    this.x += this.vx - gameSpeed * 0.5;
+                    // Particles also move faster if player is pushing right
+                    let positionRatio = Math.max(0, player.x / (canvas.width * 0.5));
+                    let currentSpeed = gameSpeed * (1 + positionRatio);
+                    this.x += this.vx - currentSpeed * 0.5;
                     this.y += this.vy;
                     this.life -= this.decay;
                 }
                 draw() {
-                    ctx.fillStyle = `rgba(200, 200, 200, ${this.life})`;
+                    // Golden hour pollen/dust effect instead of grey smoke
+                    ctx.fillStyle = `rgba(255, 215, 100, ${this.life * 0.8})`;
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
                     ctx.fill();
@@ -47,32 +753,94 @@
                     this.x = canvas.width;
                     this.y = Math.random() * (canvas.height - 100) + 50;
                     this.size = Math.random() * 30 + 50;
-                    // Array of emoji balloons and random hazards!
-                    const emojis = ['🎈', '🎈', '🎈', '🎈', '🐡', '👽', '🎃'];
-                    this.emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                    
+                    // Cottagecore Obstacles: Mushrooms, Leaves, Bees, Butterflies, Baskets!
+                    const types = [
+                        { e: '🍄', t: 'damage', s: 50, behavior: 'normal' },
+                        { e: '🍃', t: 'damage', s: 60, behavior: 'wavy' }, 
+                        { e: '🐝', t: 'lethal', s: 35, behavior: 'fast' },
+                        { e: '🦋', t: 'lethal', s: 40, behavior: 'wavy' },
+                        { e: '🧺', t: 'lethal', s: 50, behavior: 'falling' }
+                    ];
+                    let selection = types[Math.floor(Math.random() * types.length)];
+                    this.emoji = selection.e;
+                    this.type = selection.t;
+                    this.behavior = selection.behavior;
+                    if (selection.s) this.size = selection.s;
+
+                    // If it's a falling basket, start it above the screen
+                    if (this.behavior === 'falling') {
+                        this.x = canvas.width * (0.5 + Math.random() * 0.5); // Start on the right half
+                        this.y = -50; 
+                    }
+
                     this.hitbox = { w: this.size * 0.6, h: this.size * 0.8 };
                 }
-                update() { this.x -= gameSpeed; }
+                
+                update(positionRatio) { 
+                    // The further right the player is, the faster hazards move!
+                    let currentSpeed = gameSpeed * (1 + positionRatio * 1.5); 
+                    
+                    if (this.behavior === 'falling') {
+                        this.x -= currentSpeed * 0.6; // Diagonal left
+                        this.y += currentSpeed * 1.2; // Falling down fast
+                    } else if (this.behavior === 'fast') {
+                        this.x -= currentSpeed * 1.6; // Birds fly faster than clouds
+                    } else if (this.behavior === 'wavy') {
+                        this.x -= currentSpeed * 1.2;
+                        this.y += Math.sin(frames * 0.1) * 5; // Bob up and down
+                    } else {
+                        this.x -= currentSpeed; // Standard cloud drifting
+                    }
+                }
+                
                 draw() {
                     ctx.font = `${this.size}px Arial`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(this.emoji, this.x, this.y);
+                    
+                    ctx.save();
+                    if (this.behavior === 'falling') {
+                        // Add a little spin to the falling pizza
+                        ctx.translate(this.x, this.y);
+                        ctx.rotate(frames * 0.05);
+                        ctx.fillText(this.emoji, 0, 0);
+                    } else {
+                        ctx.fillText(this.emoji, this.x, this.y);
+                    }
+                    ctx.restore();
                 }
             }
 
-            function triggerGameOver() {
+            function triggerGameOver(reason = "SYSTEM FAILURE") {
                 currentState = STATE.GAMEOVER;
                 cancelAnimationFrame(animationId);
                 hud.classList.add('hidden');
                 controlsHint.classList.add('hidden');
                 gameOverScreen.classList.remove('hidden');
+                failReasonDisplay.innerText = reason;
                 finalScoreDisplay.innerText = score;
                 isThrusting = false;
             }
 
             function initGame() {
+                // Cancel menu animation if it's running
+                if (menuAnimationId) cancelAnimationFrame(menuAnimationId);
+
+                // Parse Name Setup
+                let pName = setupNameInput.value.trim() || "Captain Acorn";
+                pilotDisplay.innerText = pName;
+
+                // Parse Emoji Setup (Take up to 3 emojis)
+                let setupEmojiStr = setupEmojisInput.value.trim() || "🍄";
+                // Array.from safely splits emojis (surrogate pairs) into array elements
+                let startEmojisArr = Array.from(setupEmojiStr).slice(0, 3); 
+                
                 player = new Player();
+                startEmojisArr.forEach(e => {
+                    if (e.trim() !== '') player.addBalloon(e);
+                });
+
                 obstacles = [];
                 particles = [];
                 frames = 0;
@@ -80,24 +848,76 @@
                 gameSpeed = 4;
                 scoreDisplay.innerText = score;
                 currentState = STATE.PLAYING;
+                
                 startScreen.classList.add('hidden');
                 gameOverScreen.classList.add('hidden');
                 hud.classList.remove('hidden');
                 controlsHint.classList.remove('hidden');
+                
+                // Clear the in-game emoji input field
+                emojiInput.value = '';
+                currentBannerIdx = 0;
+                bannerBtn.classList.add('available');
+                
                 animate();
             }
 
+            // Controls logic
             function thrustOn(e) { 
+                // Don't thrust if clicking any UI buttons or typing
+                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button' || e.target.id === 'banner-btn' || e.target.id === 'add-balloon-btn' || e.target.id === 'add-kite-btn') return; 
+                if (document.activeElement === emojiInput || document.activeElement === setupNameInput || document.activeElement === setupEmojisInput) return;
+                
                 if (e.type !== 'keydown' || e.code === 'Space') {
                     if (currentState === STATE.PLAYING) isThrusting = true;
                 }
             }
             function thrustOff(e) { 
+                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button' || e.target.id === 'banner-btn' || e.target.id === 'add-balloon-btn' || e.target.id === 'add-kite-btn') return;
+                if (document.activeElement === emojiInput || document.activeElement === setupNameInput || document.activeElement === setupEmojisInput) return;
+
                 if (e.type !== 'keyup' || e.code === 'Space') {
                     isThrusting = false;
                 }
             }
 
+            function cycleBanner(e) {
+                e.stopPropagation(); // Prevents touch from triggering ship thrusters
+                currentBannerIdx = (currentBannerIdx + 1) % bannerMessages.length;
+                
+                if (currentBannerIdx === 0) {
+                    bannerBtn.classList.add('available');
+                } else {
+                    bannerBtn.classList.remove('available');
+                }
+            }
+            
+            function tieBalloon(e) {
+                e.stopPropagation();
+                const val = emojiInput.value.trim();
+                if (val && player) {
+                    player.addBalloon(val);
+                    emojiInput.value = ''; // clear input for the next one
+                }
+            }
+            
+            function deployOrigamiKite(e) {
+                e.stopPropagation();
+                if (player) {
+                    player.addKite();
+                }
+            }
+
+            // Prevent spacebar and clicks inside inputs from firing the thrusters
+            const inputsToIgnore = [emojiInput, setupNameInput, setupEmojisInput];
+            inputsToIgnore.forEach(input => {
+                input.addEventListener('keydown', e => e.stopPropagation());
+                input.addEventListener('keyup', e => e.stopPropagation());
+                input.addEventListener('mousedown', e => e.stopPropagation());
+                input.addEventListener('touchstart', e => e.stopPropagation());
+            });
+
+            // Event Listeners
             window.addEventListener('mousedown', thrustOn);
             window.addEventListener('mouseup', thrustOff);
             window.addEventListener('touchstart', thrustOn, {passive: false});
@@ -107,17 +927,173 @@
 
             startBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
             restartBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
+            
+            // UI Button Listeners
+            bannerBtn.addEventListener('click', cycleBanner);
+            bannerBtn.addEventListener('touchstart', cycleBanner, {passive: false});
+            addBalloonBtn.addEventListener('click', tieBalloon);
+            addBalloonBtn.addEventListener('touchstart', tieBalloon, {passive: false});
+            addKiteBtn.addEventListener('click', deployOrigamiKite);
+            addKiteBtn.addEventListener('touchstart', deployOrigamiKite, {passive: false});
 
+            // MENU SCENE ANIMATION
+            function menuAnimate() {
+                if (currentState !== STATE.MENU) return;
+                menuAnimationId = requestAnimationFrame(menuAnimate);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Background slowly panning
+                if (bgImg.complete && bgImg.naturalWidth > 0) {
+                    ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
+                    ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
+                    bgX -= 0.5;
+                    if (bgX <= -canvas.width) bgX = 0;
+                }
+
+                // Scene Coordinates
+                let towerX = canvas.width * 0.2;
+                let towerY = canvas.height - 50;
+                let towerHeight = Math.min(canvas.height * 0.4, 250);
+                let towerWidth = 50;
+
+                let shipW = 80; // "Half dollar sized"
+                let shipH = 60;
+                let shipX = towerX + 120; // Tied to the right of the tower
+                let shipY = towerY - towerHeight; 
+                
+                // Ship bobbing
+                shipY += Math.sin(frames * 0.05) * 8;
+
+                // 1. Draw Wooden Firetower
+                ctx.save();
+                ctx.strokeStyle = '#5c4033'; // Dark brown
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                
+                // Legs
+                ctx.beginPath();
+                ctx.moveTo(towerX - towerWidth/2, towerY);
+                ctx.lineTo(towerX - towerWidth/4, towerY - towerHeight);
+                ctx.moveTo(towerX + towerWidth/2, towerY);
+                ctx.lineTo(towerX + towerWidth/4, towerY - towerHeight);
+                ctx.stroke();
+
+                // Cross bracing
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                let sections = 4;
+                for(let i=0; i<sections; i++) {
+                    let y1 = towerY - (towerHeight/sections)*i;
+                    let y2 = towerY - (towerHeight/sections)*(i+1);
+                    // Estimate width at these heights
+                    let w1 = towerWidth/2 - (towerWidth/4)*(i/sections);
+                    let w2 = towerWidth/2 - (towerWidth/4)*((i+1)/sections);
+                    
+                    ctx.moveTo(towerX - w1, y1);
+                    ctx.lineTo(towerX + w2, y2);
+                    ctx.moveTo(towerX + w1, y1);
+                    ctx.lineTo(towerX - w2, y2);
+                }
+                ctx.stroke();
+
+                // Cabin / Platform
+                ctx.fillStyle = '#8b5a2b';
+                ctx.fillRect(towerX - towerWidth*0.8, towerY - towerHeight - 20, towerWidth*1.6, 20);
+                ctx.fillRect(towerX - towerWidth*0.5, towerY - towerHeight - 40, towerWidth, 20);
+                ctx.restore();
+
+                // 2. Draw Tying Rope
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(towerX, towerY - towerHeight - 10);
+                // Curve rope slightly
+                ctx.quadraticCurveTo(towerX + 50, shipY + 20, shipX - shipW/2, shipY);
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+
+                // 3. Draw Selected Balloons reading from the setup input
+                let previewEmojis = Array.from(setupEmojisInput.value.trim() || '🍄').slice(0, 3);
+                
+                ctx.save();
+                previewEmojis.forEach((emoji, i) => {
+                    let sway = Math.sin(frames * 0.04 + i) * 15;
+                    let bX = shipX - 10 + (i * 20) + sway;
+                    let bY = shipY - 50 - Math.abs(Math.cos(frames*0.05 + i)*10);
+                    
+                    // Draw string to balloon
+                    ctx.beginPath();
+                    ctx.moveTo(shipX, shipY - shipH/4);
+                    ctx.lineTo(bX, bY);
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Draw Shiny Balloon
+                    ctx.translate(bX, bY);
+                    let rot = (bX - shipX) * 0.01;
+                    ctx.rotate(rot);
+
+                    // Glow
+                    ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+                    ctx.shadowBlur = 15;
+                    ctx.font = "35px Arial";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(emoji, 0, 0);
+
+                    // Gloss Overlay
+                    ctx.shadowBlur = 0; 
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    ctx.beginPath();
+                    ctx.ellipse(-6, -10, 8, 4, Math.PI/5, 0, Math.PI*2);
+                    ctx.fill();
+
+                    // reset transforms for next balloon
+                    ctx.rotate(-rot);
+                    ctx.translate(-bX, -bY);
+                });
+                ctx.restore();
+
+                // 4. Draw Airship (To scale with balloons)
+                ctx.save();
+                if (shipImg.complete && shipImg.naturalWidth > 0) {
+                    ctx.drawImage(shipImg, shipX - shipW/2, shipY - shipH/2, shipW, shipH);
+                } else {
+                    ctx.fillStyle = '#A0522D';
+                    ctx.beginPath();
+                    ctx.ellipse(shipX, shipY, shipW/2.5, shipH/3, 0, 0, Math.PI*2);
+                    ctx.fill();
+                    
+                    ctx.font = `${shipH}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🎈', shipX, shipY - shipH/1.5);
+                }
+                ctx.restore();
+
+                frames++;
+            }
+
+            // MAIN GAME ANIMATION
             function animate() {
                 if(currentState !== STATE.PLAYING) return;
                 animationId = requestAnimationFrame(animate);
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+                // Calculate how far right the player is (0.0 to 1.0)
+                let maxX = canvas.width * 0.5;
+                let positionRatio = Math.max(0, player.x / maxX);
+
+                // Background scrolling gets faster as you push right
+                let currentBgSpeed = gameSpeed * 0.5 * (1 + positionRatio);
                 if (bgImg.complete && bgImg.naturalWidth > 0) {
                     ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
                     ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
-                    bgX -= gameSpeed * 0.5;
+                    bgX -= currentBgSpeed;
                     if (bgX <= -canvas.width) bgX = 0;
                 }
 
@@ -130,11 +1106,15 @@
                     if (particles[i].life <= 0) particles.splice(i, 1);
                 }
 
-                if (frames % 70 === 0) obstacles.push(new Obstacle());
+                // Dynamic Spawn Rate: Closer to the right = more frequent spawns
+                let currentSpawnRate = Math.floor(70 - (positionRatio * 55));
+                if (currentSpawnRate < 10) currentSpawnRate = 10; // Safety cap
+
+                if (frames % currentSpawnRate === 0) obstacles.push(new Obstacle());
 
                 for (let i = obstacles.length - 1; i >= 0; i--) {
                     let obs = obstacles[i];
-                    obs.update();
+                    obs.update(positionRatio); // Pass position ratio to calculate speed
                     obs.draw();
 
                     let pRect = {
@@ -156,7 +1136,14 @@
                         pRect.y < oRect.y + oRect.h &&
                         pRect.y + pRect.h > oRect.y
                     ) {
-                        triggerGameOver();
+                        if (obs.type === 'damage') {
+                            // Hit a storm or eagle! Take damage and remove the hazard
+                            player.takeDamage(0.25, Math.random() > 0.5 ? 1 : -1);
+                            obstacles.splice(i, 1);
+                            continue;
+                        } else {
+                            triggerGameOver("FATAL COLLISION");
+                        }
                     }
 
                     if (obs.x + obs.size < 0) {
@@ -169,6 +1156,9 @@
 
                 frames++;
             }
+
+            // Start the interactive Menu Scene on load!
+            menuAnimate();
         };
     </script>
 </body>

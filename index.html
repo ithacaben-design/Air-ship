@@ -2,492 +2,226 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>The Gamified Box</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Airship Afternoon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-        body, html { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; background-color: #050505; 
-            font-family: 'Georgia', serif; 
-            -webkit-user-select: none; user-select: none;
-            touch-action: none;
-        }
-        canvas { display: block; width: 100vw; height: 100vh; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         
-        #dialogue-overlay {
-            position: absolute;
-            top: 45%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 85%;
-            text-align: center;
-            color: rgba(212, 175, 55, 0.9);
-            font-size: 16px;
-            line-height: 1.4;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            pointer-events: none;
-            z-index: 20;
-            opacity: 0;
-            transition: opacity 1s ease, transform 1s ease;
-            text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        body, html { 
+            height: 100%; width: 100%; overflow: hidden; 
+            background-color: #1a1c1a; 
+            font-family: 'Lora', serif; 
         }
 
-        #dialogue-overlay.visible {
-            opacity: 1;
-            transform: translate(-50%, -55%);
-        }
-
-        #wake-screen {
-            position: absolute; inset: 0;
-            background: #050505;
-            z-index: 100;
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: opacity 0.8s ease;
-        }
-        #wake-sphere {
-            width: 70px; height: 70px;
-            border-radius: 50%;
-            background: #111;
-            box-shadow: 0 0 40px rgba(212, 175, 55, 0.15);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            animation: pulse-ring 2.5s infinite ease-in-out;
-        }
-        @keyframes pulse-ring {
-            0%, 100% { transform: scale(1); opacity: 0.6; box-shadow: 0 0 20px rgba(212, 175, 55, 0.1); }
-            50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 50px rgba(212, 175, 55, 0.25); }
+            background: #000;
         }
 
-        #texture-overlay {
-            position: absolute; inset: 0;
-            background-image: url('https://www.transparenttextures.com/patterns/p6.png');
-            opacity: 0.1; pointer-events: none; z-index: 5;
+        /* The 300-second Slow Drift Background */
+        .sky-parallax {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .scroller {
+            display: flex;
+            width: 200%;
+            height: 100%;
+            animation: slow-drift 300s linear infinite;
+        }
+
+        .scroller img {
+            width: 50%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .mirrored { transform: scaleX(-1); }
+
+        @keyframes slow-drift {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            pointer-events: none; /* Let clicks pass to UI if needed, or handle in JS */
+        }
+
+        /* UI OVERLAYS */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            pointer-events: auto;
+            color: #f4efeb;
+            text-align: center;
+        }
+
+        .hidden { display: none; }
+
+        h1 { font-family: 'Caveat', cursive; font-size: clamp(3rem, 10vw, 5rem); color: #fdf5e6; }
+        
+        .btn {
+            background: #8c7a6b;
+            border: 2px solid #5c4b3a;
+            color: #f4efeb;
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            font-family: 'Lora', serif;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        #hud {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            padding: 0 30px;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-family: 'Caveat', cursive;
+            font-size: 1.8rem;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
         }
     </style>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
 </head>
 <body>
 
-    <div id="wake-screen">
-        <div id="wake-sphere"></div>
+<div id="game-container">
+    <!-- Parallax Background Layer -->
+    <div class="sky-parallax">
+        <div class="scroller">
+            <img src="background.jpg" alt="Mountains">
+            <img src="background.jpg" class="mirrored" alt="Mountains">
+        </div>
     </div>
 
-    <div id="texture-overlay"></div>
-    <div id="dialogue-overlay"></div>
+    <!-- Gameplay Layer -->
+    <canvas id="gameCanvas"></canvas>
 
-    <script>
-        function initApp() {
-            try {
-                // --- CONFIGURATION ---
-                const DIALOGUE = {
-                    sleep: ["Rest restores the mind", "Enter the quiet", "Dream to resolve"],
-                    sunlight: ["Seek the morning light", "Warmth anchors the clock", "Clarity follows the sun"],
-                    movement: ["Energy flows with action", "Strengthen the vessel", "Motion is medicine"],
-                    nutrition: ["Fuel with intent", "Simplicity sustains", "Nourish the core"],
-                    relationships: ["Connection is life", "Presence is a gift", "We grow together"]
-                };
+    <!-- UI Layer -->
+    <div id="ui-layer">
+        <div id="hud" class="hidden">
+            <div>SCORE: <span id="score">0</span></div>
+            <div>PILOT: <span id="pilotName">Captain</span></div>
+        </div>
 
-                const PILLARS = [
-                    { id: 'sleep', color: 0xd4af37, shape: 'TorusKnotGeometry', args: [0.2, 0.06, 64, 8] },
-                    { id: 'sunlight', color: 0x4287f5, shape: 'OctahedronGeometry', args: [0.3] },
-                    { id: 'movement', color: 0xf54242, shape: 'SphereGeometry', args: [0.3, 32, 32] },
-                    { id: 'nutrition', color: 0x9c42f5, shape: 'CylinderGeometry', args: [0.2, 0.2, 0.4, 16] },
-                    { id: 'relationships', color: 0x42f569, shape: 'TorusGeometry', args: [0.2, 0.1, 16, 32] }
-                ];
+        <div id="start-screen" class="screen">
+            <h1>Airship Afternoon</h1>
+            <input type="text" id="nameInput" placeholder="Enter Pilot Name" style="padding: 10px; border-radius: 5px; border: none; font-size: 1.2rem; width: 250px;">
+            <button class="btn" onclick="startGame()">Untie & Launch</button>
+        </div>
+    </div>
+</div>
 
-                const { Engine, Runner, Bodies, Composite, Constraint, Events } = Matter;
-                const engine = Engine.create();
-                engine.gravity.y = 0; 
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let shipImg = new Image();
+    shipImg.src = 'airship.jpg'; // Using the black background version
 
-                let currentMode = 'orbit'; 
-                let orbitRotation = 0;
-                let isNavLocked = false; // 1 second timer for buttons
-                let screenW = window.innerWidth;
-                let screenH = window.innerHeight;
+    let gameState = 'menu';
+    let player = {
+        x: 100,
+        y: 200,
+        vy: 0,
+        width: 120, // "Half-dollar" relative size
+        height: 80,
+        gravity: 0.15,
+        lift: -0.4,
+        isLifting: false
+    };
 
-                const scene = new THREE.Scene();
-                scene.fog = new THREE.FogExp2(0x050505, 0.02);
-                let aspect = screenW / screenH;
-                const viewSize = 10; 
-                const camera = new THREE.OrthographicCamera(-viewSize*aspect/2, viewSize*aspect/2, viewSize/2, -viewSize/2, 0.1, 100);
-                camera.position.z = 10;
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        // Adjust ship size based on screen
+        player.width = Math.min(canvas.width * 0.15, 120);
+        player.height = player.width * 0.66;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
-                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                renderer.setSize(screenW, screenH);
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                renderer.shadowMap.enabled = true;
-                document.body.appendChild(renderer.domElement);
+    function startGame() {
+        const name = document.getElementById('nameInput').value;
+        document.getElementById('pilotName').innerText = name || "Captain";
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('hud').classList.remove('hidden');
+        gameState = 'play';
+        requestAnimationFrame(update);
+    }
 
-                scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                dirLight.position.set(5, 5, 10);
-                dirLight.castShadow = true;
-                scene.add(dirLight);
+    // Input Handling
+    window.addEventListener('mousedown', () => player.isLifting = true);
+    window.addEventListener('mouseup', () => player.isLifting = false);
+    window.addEventListener('touchstart', (e) => { e.preventDefault(); player.isLifting = true; });
+    window.addEventListener('touchend', () => player.isLifting = false);
 
-                window.addEventListener('resize', () => {
-                    screenW = window.innerWidth; screenH = window.innerHeight;
-                    aspect = screenW / screenH;
-                    camera.left = -viewSize * aspect / 2; camera.right = viewSize * aspect / 2;
-                    camera.top = viewSize / 2; camera.bottom = -viewSize / 2;
-                    camera.updateProjectionMatrix();
-                    renderer.setSize(screenW, screenH);
-                });
+    function update() {
+        if (gameState !== 'play') return;
 
-                // Materials
-                const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d2b1f, roughness: 0.9 });
-                const trayMat = new THREE.MeshStandardMaterial({ color: 0x2a1d15, roughness: 0.8 });
-                const floorMat = new THREE.MeshStandardMaterial({ color: 0x1a100a, roughness: 1.0 });
-                const flipperMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.5, roughness: 0.4 });
-                const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.2 });
-                const riverStoneMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.1 });
-                
-                const boxWidth = viewSize * aspect;
-                const boxHeight = viewSize;
-                
-                const floor = new THREE.Mesh(new THREE.PlaneGeometry(boxWidth * 2, boxHeight * 2), floorMat);
-                floor.receiveShadow = true;
-                scene.add(floor);
-
-                const physicsBodies = [];
-                function createWall(x, y, w, h) {
-                    const body = Bodies.rectangle(x, y, w, h, { isStatic: true, friction: 0.5, restitution: 0.2 });
-                    physicsBodies.push(body);
-                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 1.5), woodMat);
-                    mesh.position.set(x, -y, 0.75); 
-                    scene.add(mesh);
-                }
-
-                createWall(0, -boxHeight/2 - 0.5, boxWidth + 2, 1); 
-                createWall(0, boxHeight/2 + 0.5, boxWidth + 2, 1); 
-                createWall(-boxWidth/2 - 0.5, 0, 1, boxHeight); 
-                createWall(boxWidth/2 + 0.5, 0, 1, boxHeight); 
-
-                const marbles = [];
-                PILLARS.forEach((pillar, i) => {
-                    const angle = (i / PILLARS.length) * (Math.PI * 2);
-                    const x = Math.cos(angle) * 3;
-                    const y = Math.sin(angle) * 3;
-
-                    const body = Bodies.circle(x, y, 0.3, { restitution: 0.6, friction: 0.001, density: 0.05, isSensor: true });
-                    physicsBodies.push(body);
-                    const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, opacity: 1, roughness: 0.1 });
-                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), mat);
-                    mesh.castShadow = true;
-                    scene.add(mesh);
-                    marbles.push({ body, mesh, material: mat, pillarData: pillar, fillLevel: 0, logs: 0, currentScale: 1 });
-                });
-
-                const INSET_MODES = [
-                    { id: 'orbit', color: 0xa855f7 },
-                    { id: 'sandbox', color: 0x777777 },
-                    { id: 'billiards', color: 0x1a5e20 },
-                    { id: 'pinball', color: 0x22c55e },
-                    { id: 'maze', color: 0x3b82f6 },
-                    { id: 'koi', color: 0xffffff }
-                ];
-
-                const insetButtons = [];
-                const insetSpacing = Math.min(boxWidth / 7.5, 1.1);
-                const insetStartX = -((INSET_MODES.length - 1) * insetSpacing) / 2;
-
-                INSET_MODES.forEach((mode, i) => {
-                    const mat = new THREE.MeshPhysicalMaterial({ color: 0x111111, emissive: 0x000000, emissiveIntensity: 0, transmission: 0.8, roughness: 0.1 });
-                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), mat);
-                    const x = insetStartX + i * insetSpacing;
-                    const y = boxHeight/2 - 0.7; 
-                    mesh.position.set(x, -y, 0.4);
-                    scene.add(mesh);
-                    const light = new THREE.PointLight(mode.color, 0, 3);
-                    light.position.copy(mesh.position); light.position.z += 0.5;
-                    scene.add(light);
-                    insetButtons.push({ mesh, material: mat, light, modeData: mode, unlocked: (mode.id === 'orbit') });
-                });
-
-                const billiardsPockets = [];
-                const pocketGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 32);
-                const pocketMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
-                [{x: -boxWidth/2 + 0.6, y: -boxHeight/2 + 0.6}, {x: boxWidth/2 - 0.6, y: -boxHeight/2 + 0.6}, {x: -boxWidth/2 + 0.6, y: boxHeight/2 - 0.6}, {x: boxWidth/2 - 0.6, y: boxHeight/2 - 0.6}, {x: -boxWidth/2 + 0.4, y: 0}, {x: boxWidth/2 - 0.4, y: 0}].forEach(p => {
-                    const mesh = new THREE.Mesh(pocketGeo, pocketMat);
-                    mesh.position.set(p.x, -p.y, 0.1); mesh.rotation.x = Math.PI / 2; mesh.visible = false;
-                    scene.add(mesh); billiardsPockets.push(mesh);
-                });
-                
-                const mazeWalls = [];
-                [{ x: -2.0, y: 0.0, w: 0.5, h: 4.0 }, { x: 2.0, y: -2.0, w: 4.0, h: 0.5 }, { x: 1.0, y: 2.0, w: 5.0, h: 0.5 }].forEach(w => {
-                    const body = Bodies.rectangle(w.x, w.y, w.w, w.h, { isStatic: true, isSensor: true });
-                    physicsBodies.push(body);
-                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w.w, w.h, 1.5), woodMat);
-                    mesh.position.set(w.x, -w.y, 0.75); mesh.visible = false;
-                    scene.add(mesh); mazeWalls.push({body, mesh});
-                });
-
-                const pinballElements = [];
-                [{ x: 0, y: -2.5, r: 0.6 }, { x: -1.5, y: -1.0, r: 0.5 }, { x: 1.5, y: -1.0, r: 0.5 }].forEach(b => {
-                    const body = Bodies.circle(b.x, b.y, b.r, { isStatic: true, isSensor: true, restitution: 1.5 });
-                    physicsBodies.push(body);
-                    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(b.r, b.r, 0.5, 32), brassMat);
-                    mesh.rotation.x = Math.PI / 2; mesh.position.set(b.x, -b.y, 0.25); mesh.castShadow = true; mesh.visible = false;
-                    scene.add(mesh); pinballElements.push({body, mesh});
-                });
-
-                const flippers = [];
-                function createFlipper(x, y, w, h, isLeft) {
-                    const body = Bodies.rectangle(x, y, w, h, { isSensor: true }); 
-                    const pivotX = isLeft ? x - w/2 + 0.2 : x + w/2 - 0.2;
-                    const pivot = Constraint.create({ pointA: { x: pivotX, y: y }, bodyB: body, pointB: { x: isLeft ? -w/2 + 0.2 : w/2 - 0.2, y: 0 }, stiffness: 1, length: 0 });
-                    const spring = Constraint.create({ pointA: { x: x, y: y + 2 }, bodyB: body, pointB: { x: isLeft ? w/2 : -w/2, y: 0 }, stiffness: 0.02, length: 1 });
-                    physicsBodies.push(body); Composite.add(engine.world, [pivot, spring]);
-                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, 1.0), flipperMat);
-                    mesh.position.z = 0.5; mesh.visible = false;
-                    scene.add(mesh); flippers.push({ body, mesh, isLeft });
-                }
-                createFlipper(-1.5, boxHeight/2 - 2.0, 2.5, 0.4, true);
-                createFlipper(1.5, boxHeight/2 - 2.0, 2.5, 0.4, false);
-
-                const koiElements = [];
-                const koiTray = new THREE.Mesh(new THREE.BoxGeometry(boxWidth, 1.5, 0.8), trayMat);
-                koiTray.position.set(0, -(boxHeight/2 - 1.2), 0.4); koiTray.visible = false;
-                scene.add(koiTray); koiElements.push(koiTray);
-
-                const stonePos = [{x: -1.2, y: -2.0, s: 0.6}, {x: 1.8, y: -2.8, s: 0.9}, {x: -2.5, y: 0.5, s: 0.8}, {x: 2.2, y: 0.2, s: 0.7}, {x: 0.5, y: 2.5, s: 0.5}, {x: -1.0, y: 3.5, s: 0.4}, {x: 1.8, y: 2.8, s: 0.7}, {x: 0.2, y: -0.5, s: 0.5}];
-                stonePos.forEach(p => {
-                    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 16), riverStoneMat);
-                    mesh.scale.set(p.s, p.s * 0.4, p.s * 0.7); mesh.position.set(p.x, -p.y, 0.2); mesh.rotation.z = Math.random() * Math.PI; mesh.visible = false;
-                    scene.add(mesh); koiElements.push(mesh);
-                });
-
-                Composite.add(engine.world, physicsBodies);
-
-                const state = { unlockedOrbit: true, unlockedSandbox: false, unlockedBilliards: false, unlockedPinball: false, unlockedMaze: false, unlockedKoi: false };
-
-                function saveState() {
-                    const data = { marbles: marbles.map(m => ({ id: m.pillarData.id, fill: m.fillLevel, logs: m.logs })), mode: currentMode };
-                    localStorage.setItem('marbles_master_save_v7', JSON.stringify(data));
-                }
-
-                function loadState() {
-                    const raw = localStorage.getItem('marbles_master_save_v7');
-                    if (!raw) return;
-                    try {
-                        const data = JSON.parse(raw);
-                        if (data.marbles) {
-                            data.marbles.forEach(s => {
-                                const m = marbles.find(item => item.pillarData.id === s.id);
-                                if (m) { m.fillLevel = s.fill; m.logs = s.logs; updateMarbleVisual(m); }
-                            });
-                        }
-                        if (data.mode) window.activateMode(data.mode);
-                        checkUnlocks();
-                    } catch(e) {}
-                }
-
-                function updateMarbleVisual(m) {
-                    const targetColor = new THREE.Color(m.pillarData.color);
-                    const hollowColor = new THREE.Color(0xffffff);
-                    const visualProgress = m.fillLevel / 0.9;
-                    m.material.color.copy(hollowColor).lerp(targetColor, visualProgress);
-                    m.material.transmission = 0.9 - (0.8 * visualProgress);
-                }
-
-                function logHabit(marble) {
-                    if (marble.fillLevel >= 0.9) return;
-                    const prompts = DIALOGUE[marble.pillarData.id];
-                    const promptText = prompts[marble.logs % prompts.length];
-                    const overlay = document.getElementById('dialogue-overlay');
-                    overlay.innerText = promptText; overlay.classList.add('visible');
-                    setTimeout(() => overlay.classList.remove('visible'), 3500);
-                    marble.logs++; marble.fillLevel = Math.round((marble.fillLevel + 0.10) * 10) / 10;
-                    marble.fillLevel = Math.min(marble.fillLevel, 0.9);
-                    updateMarbleVisual(marble); checkUnlocks(); saveState();
-                }
-
-                function checkUnlocks() {
-                    const isSandboxUnlocked = marbles.some(m => m.fillLevel > 0);
-                    const totalFillCount = marbles.reduce((sum, m) => sum + (m.fillLevel > 0 ? 1 : 0), 0);
-                    const isBilliardsUnlocked = totalFillCount >= 2 || marbles.some(m => m.fillLevel >= 0.2);
-                    const isPinballUnlocked = marbles.some(m => m.fillLevel >= 0.3);
-                    const isMazeUnlocked = marbles.some(m => m.fillLevel >= 0.45);
-                    const isKoiUnlocked = marbles.every(m => m.fillLevel >= 0.9);
-
-                    insetButtons.forEach(btn => {
-                        const mId = btn.modeData.id;
-                        let unlocked = (mId === 'orbit') || (mId === 'sandbox' && isSandboxUnlocked) || (mId === 'billiards' && isBilliardsUnlocked) || (mId === 'pinball' && isPinballUnlocked) || (mId === 'maze' && isMazeUnlocked) || (mId === 'koi' && isKoiUnlocked);
-                        btn.unlocked = unlocked;
-                        const isActive = currentMode === mId;
-                        if (unlocked) {
-                            btn.material.color.setHex(btn.modeData.color); btn.material.emissive.setHex(btn.modeData.color);
-                            btn.material.emissiveIntensity = isActive ? 2.5 : 0.8; btn.light.intensity = isActive ? 1.5 : 0.4;
-                        } else {
-                            btn.material.color.setHex(0x111111); btn.material.emissive.setHex(0x000000);
-                            btn.material.emissiveIntensity = 0; btn.light.intensity = 0;
-                        }
-                    });
-                    state.unlockedSandbox = isSandboxUnlocked; state.unlockedBilliards = isBilliardsUnlocked;
-                    state.unlockedPinball = isPinballUnlocked; state.unlockedMaze = isMazeUnlocked; state.unlockedKoi = isKoiUnlocked;
-                }
-
-                window.activateMode = function(newMode) {
-                    if (newMode === 'sandbox' && !state.unlockedSandbox) return;
-                    if (newMode === 'billiards' && !state.unlockedBilliards) return;
-                    if (newMode === 'pinball' && !state.unlockedPinball) return;
-                    if (newMode === 'maze' && !state.unlockedMaze) return;
-                    if (newMode === 'koi' && !state.unlockedKoi) return;
-                    if (newMode === 'koi' && currentMode !== 'koi') { playAcousticRipple(); if (navigator.vibrate) navigator.vibrate([50, 100, 50, 100, 200]); }
-                    
-                    const oldMode = currentMode; currentMode = newMode;
-                    checkUnlocks(); if (oldMode !== newMode) saveState();
-                    
-                    // Start 1 second button timer
-                    isNavLocked = true;
-                    setTimeout(() => { isNavLocked = false; }, 1000);
-
-                    floorMat.color.setHex(0x1a100a);
-                    marbles.forEach(m => {
-                        m.body.isSensor = (newMode === 'orbit'); 
-                        m.mesh.visible = true; m.body.restitution = 0.6; m.body.frictionAir = 0.001;
-                        Matter.Body.scale(m.body, 1/m.currentScale, 1/m.currentScale); m.mesh.scale.set(1, 1, 1); m.currentScale = 1;
-                        updateMarbleVisual(m);
-                    });
-                    billiardsPockets.forEach(p => { p.visible = false; }); mazeWalls.forEach(w => { w.body.isSensor = true; w.mesh.visible = false; });
-                    pinballElements.forEach(e => { e.body.isSensor = true; e.mesh.visible = false; }); flippers.forEach(f => { f.body.isSensor = true; f.mesh.visible = false; });
-                    koiElements.forEach(e => { e.visible = false; }); engine.gravity.x = 0; engine.gravity.y = 0;
-
-                    if (newMode === 'sandbox') {
-                        marbles.forEach(m => {
-                           Matter.Body.setPosition(m.body, { x: -boxWidth/2 + 1 + Math.random() * (boxWidth - 2), y: -boxHeight/2 + 1 + Math.random() * (boxHeight - 2) });
-                        });
-                    } else if (newMode === 'billiards') {
-                        floorMat.color.setHex(0x1a5e20); billiardsPockets.forEach(p => p.visible = true);
-                        marbles.forEach((m, i) => {
-                            m.body.restitution = 0.9; m.body.frictionAir = 0.015;
-                            if (i === 0) m.material.color.setHex(0xd4af37); else m.material.color.setHex(m.pillarData.color);
-                            m.material.transmission = 0.1;
-                        });
-                        const cue = marbles[0]; Matter.Body.setPosition(cue.body, { x: 0, y: boxHeight/4 });
-                        const r = 0.3; const startY = -boxHeight/4; const hOffset = r * Math.sqrt(3);
-                        const rackPositions = [{x: 0, y: startY}, {x: -r, y: startY - hOffset}, {x: r, y: startY - hOffset}, {x: 0, y: startY - (hOffset * 2)}];
-                        for(let i=1; i<marbles.length; i++) Matter.Body.setPosition(marbles[i].body, rackPositions[i-1]);
-                    } else if (newMode === 'pinball') {
-                        floorMat.color.setHex(0x3e1505); engine.gravity.y = 0.5;
-                        flippers.forEach(f => { f.body.isSensor = false; f.mesh.visible = true; }); pinballElements.forEach(e => { e.body.isSensor = false; e.mesh.visible = true; });
-                        const activeBall = marbles[0]; Matter.Body.scale(activeBall.body, 0.5, 0.5); activeBall.mesh.scale.set(0.5, 0.5, 0.5); activeBall.currentScale = 0.5;
-                        Matter.Body.setPosition(activeBall.body, { x: 0, y: boxHeight/2 - 2.5 });
-                        for (let i = 1; i < marbles.length; i++) { Matter.Body.setPosition(marbles[i].body, { x: 100, y: 100 }); marbles[i].body.isSensor = true; marbles[i].mesh.visible = false; }
-                    } else if (newMode === 'maze') mazeWalls.forEach(w => { w.body.isSensor = false; w.mesh.visible = true; });
-                    else if (newMode === 'koi') {
-                        floorMat.color.setHex(0x111111); koiElements.forEach(e => { e.visible = true; });
-                        const tWidth = Math.min(boxWidth * 0.9, 8); const sX = -tWidth / 2; const step = tWidth / 5;
-                        marbles.forEach((m, i) => {
-                            if (m.pillarData.shape && THREE[m.pillarData.shape]) { m.mesh.geometry.dispose(); m.mesh.geometry = new THREE[m.pillarData.shape](...m.pillarData.args); }
-                            m.body.isSensor = true; const targetX = sX + step * i + (step/2); const targetY = boxHeight/2 - 1.2; 
-                            Matter.Body.setPosition(m.body, { x: targetX, y: targetY });
-                        });
-                    }
-                };
-
-                const raycaster = new THREE.Raycaster();
-                const mouseCoords = new THREE.Vector2();
-                let flickState = { active: false, marble: null, startX: 0, startY: 0 };
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                let audioCtx = null;
-
-                window.addEventListener('pointerdown', async (e) => {
-                    if (!audioCtx && AudioContext) { try { audioCtx = new AudioContext(); if (typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission(); } catch(err) {} }
-                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-                    
-                    const wakeScreen = document.getElementById('wake-screen');
-                    if (wakeScreen) {
-                        wakeScreen.style.opacity = 0;
-                        setTimeout(() => wakeScreen.remove(), 800); // Definitively remove
-                        return;
-                    }
-
-                    mouseCoords.x = (e.clientX / window.innerWidth) * 2 - 1; mouseCoords.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                    raycaster.setFromCamera(mouseCoords, camera);
-                    const activeMarbles = marbles.filter(m => m.mesh.visible).map(m => m.mesh);
-                    const navButtons = insetButtons.map(b => b.mesh);
-                    const intersects = raycaster.intersectObjects([...activeMarbles, ...navButtons]);
-                    if (intersects.length > 0) {
-                        const hitMesh = intersects[0].object;
-                        const navBtn = insetButtons.find(b => b.mesh === hitMesh); 
-                        if (navBtn) { 
-                            if (navBtn.unlocked && !isNavLocked) window.activateMode(navBtn.modeData.id); 
-                            return; 
-                        }
-                        const marble = marbles.find(m => m.mesh === hitMesh); 
-                        if (marble) { 
-                            flickState = { active: true, marble: marble, startX: e.clientX, startY: e.clientY }; 
-                            logHabit(marble); 
-                            return; 
-                        }
-                    }
-                    if (currentMode === 'pinball') { const isLeft = e.clientX < window.innerWidth / 2; flippers.forEach(f => { if (f.isLeft === isLeft) Matter.Body.applyForce(f.body, { x: f.body.position.x + (f.isLeft ? 1 : -1), y: f.body.position.y }, { x: 0, y: -0.06 }); }); }
-                });
-
-                window.addEventListener('pointerup', (e) => {
-                    if (flickState.active && flickState.marble) {
-                        const dx = e.clientX - flickState.startX; const dy = e.clientY - flickState.startY;
-                        if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
-                            let fX = dx * 0.00035; let fY = dy * 0.00035; const maxF = 0.09;
-                            fX = Math.max(-maxF, Math.min(maxF, fX)); fY = Math.max(-maxF, Math.min(maxF, fY));
-                            Matter.Body.applyForce(flickState.marble.body, flickState.marble.body.position, { x: fX, y: fY });
-                        }
-                        flickState.active = false; flickState.marble = null;
-                    }
-                });
-
-                window.addEventListener('deviceorientation', (e) => {
-                    if (currentMode === 'sandbox' || currentMode === 'maze') {
-                        let x = Math.max(-90, Math.min(90, e.gamma || 0)); let y = Math.max(-90, Math.min(90, e.beta || 0));  
-                        engine.gravity.x = (x / 90) * 0.8; engine.gravity.y = (y / 90) * 0.8;
-                    }
-                });
-
-                function playAcousticRipple() { if (!audioCtx) return; const notes = [400, 500, 600, 800, 1200]; notes.forEach((freq, i) => { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1); gain.gain.setValueAtTime(0, audioCtx.currentTime + i * 0.1); gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + i * 0.1 + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.3); osc.start(audioCtx.currentTime + i * 0.1); osc.stop(audioCtx.currentTime + i * 0.1 + 0.3); }); }
-                function playAcousticTap(relS) { if (!audioCtx) return; const vol = Math.max(0.04, Math.min(0.5, relS * 0.045)); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05); gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05); if (navigator.vibrate && vol > 0.15) { navigator.vibrate(Math.min(12, relS * 1.8)); } }
-
-                Events.on(engine, 'collisionStart', (event) => { const pairs = event.pairs; for (let i = 0; i < pairs.length; i++) { const { bodyA, bodyB } = pairs[i]; if (bodyA.isSensor || bodyB.isSensor) continue; const relS = (bodyA.speed || 0) + (bodyB.speed || 0); if (relS > 0.6) { playAcousticTap(relS); } } });
-
-                const runner = Runner.create(); Runner.run(runner, engine);
-                
-                function animate() { 
-                    requestAnimationFrame(animate); 
-                    
-                    if (currentMode === 'orbit') {
-                        orbitRotation += 0.005;
-                        marbles.forEach((m, i) => {
-                            const angle = orbitRotation + (i / marbles.length) * (Math.PI * 2);
-                            const targetX = Math.cos(angle) * 3;
-                            const targetY = Math.sin(angle) * 3;
-                            Matter.Body.setPosition(m.body, { x: targetX, y: targetY });
-                        });
-                    }
-
-                    if (currentMode === 'koi') { 
-                        marbles.forEach(m => { m.mesh.rotation.x += 0.004; m.mesh.rotation.y += 0.004; }); 
-                    } 
-                    
-                    marbles.forEach(m => { 
-                        m.mesh.position.x = m.body.position.x; 
-                        m.mesh.position.y = -m.body.position.y; 
-                        if (currentMode !== 'koi') m.mesh.rotation.z = -m.body.angle; 
-                    }); 
-                    
-                    flippers.forEach(f => { f.mesh.position.x = f.body.position.x; f.mesh.position.y = -f.body.position.y; f.mesh.rotation.z = -f.body.angle; }); 
-                    
-                    renderer.render(scene, camera); 
-                }
-                
-                animate(); loadState();
-
-            } catch (err) { }
+        // Physics
+        if (player.isLifting) {
+            player.vy += player.lift;
+        } else {
+            player.vy += player.gravity;
         }
-        if (document.readyState === 'complete' || document.readyState === 'interactive') { initApp(); } else { document.addEventListener('DOMContentLoaded', initApp); }
-    </script>
+        player.y += player.vy;
+        player.vy *= 0.98; // Friction
+
+        // Bounds
+        if (player.y < 0) { player.y = 0; player.vy = 0; }
+        if (player.y > canvas.height - player.height) { player.y = canvas.height - player.height; player.vy = 0; }
+
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Drawing the Airship with "Black-Key" transparency trick
+        // We use globalCompositeOperation to 'screen' or use a custom filter
+        ctx.save();
+        
+        // This filter attempts to make strictly black pixels transparent in real-time
+        // If your ship art is too dark, we can remove this and use a proper PNG
+        ctx.globalCompositeOperation = 'screen'; 
+        
+        // Draw Squirrel Pilot & Woodpecker Ship
+        ctx.drawImage(shipImg, player.x, player.y, player.width, player.height);
+        
+        ctx.restore();
+    }
+
+</script>
 </body>
 </html>
+

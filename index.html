@@ -3,75 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Acorn Aviator - Tethers and Horizontal Dynamics</title>
+  <title>Acorn Aviator - Professional Asset Edition</title>
   
   <style>
     body, html {
       margin: 0; padding: 0; width: 100vw; height: 100vh;
-      overflow: hidden; font-family: sans-serif; background-color: #1a1a1a; 
+      overflow: hidden; font-family: sans-serif; background-color: #87CEEB; 
       overscroll-behavior: none;
     }
     @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
     
-    @keyframes driftBehind {
-      from { opacity: 0; transform: translate(-20px, 5px) scale(0.9); }
-      to { opacity: 1; transform: translate(0, 0) scale(1); }
-    }
-
     @keyframes sway {
-      0% { transform: rotate(-3deg) translateX(-10px); }
-      50% { transform: rotate(3deg) translateX(10px); }
-      100% { transform: rotate(-3deg) translateX(-10px); }
+      0% { transform: rotate(-2deg) translateY(-5px); }
+      50% { transform: rotate(2deg) translateY(5px); }
+      100% { transform: rotate(-2deg) translateY(-5px); }
     }
 
-    /* Grounded state for the start screen */
     @keyframes groundedShake {
-      0% { transform: translate(1px, 1px) rotate(0deg); }
-      50% { transform: translate(-1px, -1px) rotate(1deg); }
-      100% { transform: translate(1px, -1px) rotate(0deg); }
+      0%, 100% { transform: translate(0,0) rotate(0deg); }
+      25% { transform: translate(1px, -1px) rotate(0.5deg); }
+      75% { transform: translate(-1px, 1px) rotate(-0.5deg); }
     }
 
-    .sway-effect { animation: sway 4s ease-in-out infinite; }
-
-    .control-btn {
-      flex: 1; height: 70px; font-size: 1rem; color: white;
-      border: none; border-radius: 12px; cursor: pointer;
-      font-weight: bold; box-shadow: 0 4px 0px rgba(0,0,0,0.2);
-      transition: transform 0.05s, box-shadow 0.05s;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    .ship-rendering {
+      height: 120px;
+      z-index: 20;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
     }
-    .control-btn:active {
-      transform: translateY(2px); box-shadow: 0 1px 0px rgba(0,0,0,0.2);
-    }
-    .control-btn:disabled { background-color: #555 !important; opacity: 0.5; cursor: default; }
-
-    .scissor-btn { width: 70px; flex: 0 0 auto; border-radius: 50%; font-size: 1.5rem; }
 
     .nav-bar {
       position: fixed; bottom: 0; left: 0; right: 0;
-      height: 100px; background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      height: 110px; background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
       display: flex; align-items: center; padding: 0 15px; gap: 10px;
-      z-index: 1000; border-top: 1px solid rgba(255,255,255,0.1);
+      z-index: 1000; border-top: 1px solid rgba(255,255,255,0.2);
     }
 
-    /* Style for emoji picker buttons */
+    .control-btn {
+      flex: 1; height: 80px; font-size: 1rem; color: white;
+      border: none; border-radius: 18px; cursor: pointer;
+      font-weight: bold; box-shadow: 0 6px 0px rgba(0,0,0,0.3);
+      transition: transform 0.05s; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; touch-action: manipulation;
+    }
+
+    .control-btn:active { transform: translateY(4px); box-shadow: 0 2px 0px rgba(0,0,0,0.3); }
+
     .emoji-picker-btn {
-      font-size: 2rem;
-      background: rgba(255, 255, 255, 0.7);
-      border: 3px solid transparent;
-      border-radius: 12px;
-      padding: 10px;
-      margin: 5px;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
+      font-size: 2.2rem; background: white; border: 4px solid #f0f0f0;
+      border-radius: 18px; padding: 15px; margin: 8px; cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.2s;
     }
-    .emoji-picker-btn.selected {
-      border-color: #4CAF50;
-      background: white;
-      transform: scale(1.1);
-    }
+    .emoji-picker-btn.selected { border-color: #4CAF50; transform: scale(1.15); background: #e8f5e9; }
   </style>
 
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -84,301 +67,138 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    const ALL_AVAILABLE_EMOJIS = ["❤️", "👄", "🍆", "🍑"];
-
-    const BANNER_MESSAGES = [
-      "I love you, {name}.",
-      "I see all the hard work you're doing, {name}.",
-      "I'm grateful to you for being so good, {name}.",
-      "Everyone is doing their best and their best is good enough, {name}."
-    ];
+    const ALL_EMOJIS = ["❤️", "👄", "🍆", "🍑"];
+    const BANNER_MESSAGES = ["I love you, {name}.", "Keep going, {name}.", "Grateful for you, {name}.", "You've got this, {name}."];
 
     function App() {
-      const [gameState, setGameState] = useState('start'); 
+      const [gameState, setGameState] = useState('start');
       const [playerName, setPlayerName] = useState('');
-      
-      // Keep track of which 3 emojis are selected for the flight
-      const [selectedEmojis, setSelectedEmojis] = useState(["❤️", "👄", "🍑"]); 
-      
-      const [altitude, setAltitude] = useState(5); // Start on the ground
-      const [shipX, setShipX] = useState(15); // Dynamic horizontal position (5% to 80%)
-      const [speed, setSpeed] = useState(0); // Start motionless
+      const [selectedEmojis, setSelectedEmojis] = useState(["❤️", "👄", "🍑"]);
+      const [altitude, setAltitude] = useState(5);
+      const [shipX, setShipX] = useState(25);
       const [balloons, setBalloons] = useState([]);
       const [kites, setKites] = useState([]);
       const [banners, setBanners] = useState([]);
-      const [smokeSignals, setSmokeSignals] = useState([]);
-      const [isLanding, setIsLanding] = useState(false);
       const [score, setScore] = useState(0);
 
-      const gameLoopRef = useRef();
-
-      const bgImageUrl = "https://raw.githubusercontent.com/ithacaben-design/Air-ship/main/PXL_20231005_222618446.PORTRAIT-PANO.jpg";
       const shipImageUrl = "https://raw.githubusercontent.com/ithacaben-design/Air-ship/main/1774449907604.png";
+      const bgImageUrl = "https://raw.githubusercontent.com/ithacaben-design/Air-ship/main/PXL_20231005_222618446.PORTRAIT-PANO.jpg";
 
       const startGame = () => {
-        if (selectedEmojis.length !== 3) return; // Must pick 3
-        setAltitude(15); // Lifts off ground immediately
-        setSpeed(5); 
-        setShipX(20); // Reset horizontal position
+        if (selectedEmojis.length < 3) return;
+        setAltitude(25);
+        setShipX(25);
         setScore(0);
-        
-        // START WITH 1 OF EACH SELECTED BALLOON tied on the vertical strip
-        setBalloons(selectedEmojis.map(emoji => ({ id: Date.now() + Math.random(), emoji: emoji }))); 
-        
-        setKites([]); setBanners([]); setSmokeSignals([]);
-        setIsLanding(false); setGameState('playing');
+        setKites([]); setBanners([]);
+        // Start with 1 of each balloon as requested
+        setBalloons(selectedEmojis.map((e, i) => ({ id: Date.now() + i, emoji: e })));
+        setGameState('playing');
       };
-
-      const dropAll = () => { setBalloons([]); setKites([]); setBanners([]); };
-
-      // Handle selecting/deselecting emojis on start screen
-      const toggleEmojiSelection = (emoji) => {
-        setSelectedEmojis(prev => {
-          if (prev.includes(emoji)) {
-            return prev.filter(e => e !== emoji);
-          } else if (prev.length < 3) {
-            return [...prev, emoji];
-          }
-          return prev;
-        });
-      };
-
-      // Game physics / interaction sequence
-      useEffect(() => {
-        if (banners.length === 4 && smokeSignals.length === 0 && !isLanding) {
-          setTimeout(() => setSmokeSignals(prev => [...prev, { id: 's1', text: "I miss you." }]), 2000); 
-          setTimeout(() => setSmokeSignals(prev => [...prev, { id: 's2', text: "I'll see you soon." }]), 5000); 
-          setTimeout(() => setIsLanding(true), 8000);
-        }
-      }, [banners.length, smokeSignals.length, isLanding]);
 
       useEffect(() => {
         if (gameState !== 'playing') return;
-        const loop = () => {
-          
-          // Vertical Physics (unchanged)
-          setAltitude((prev) => {
-            let newAlt;
-            if (isLanding) { newAlt = prev - 0.12; } 
-            else {
-              const lift = balloons.length * 0.65; // Lift from trailing emojis
-              const gravity = 0.75; 
-              newAlt = prev + (lift - gravity);
-            }
-            if (newAlt > 90) newAlt = 90;
-            if (newAlt <= 0) { setGameState(isLanding ? 'start' : 'gameover'); return 0; }
-            return newAlt;
+        const loop = setInterval(() => {
+          setAltitude(a => {
+            const lift = balloons.length * 0.9;
+            const gravity = 1.3; // Heavier gravity for better "Cut" feel
+            const next = a + (lift - gravity);
+            if (next <= 0) { setGameState('gameover'); return 0; }
+            return Math.min(next, 85);
           });
 
-          // Horizontal Dynamics (New)
-          // Kites pull ship right, Banners drag ship left
-          setShipX((prevX) => {
-              if (isLanding) return prevX; // Maintain position during landing sequence
-              
-              const basePos = 20; // Default position
-              const kiteForce = kites.length * 1.5; // Kites pull right (max 37.5)
-              const bannerDrag = banners.length * 2.0; // Banners drag left (max 50)
-              
-              const calculatedX = basePos + (kiteForce - bannerDrag);
-              
-              // Boundaries: Don't go past 5% left or 75% right
-              return Math.max(5, Math.min(75, calculatedX)); 
+          setShipX(x => {
+            const pull = kites.length * 3.5; 
+            const drag = banners.length * 4.0; 
+            return Math.max(5, Math.min(80, 25 + pull - drag));
           });
 
-          // Vertical Speed (unchanged)
-          setSpeed((prev) => {
-            if (isLanding) return Math.max(1, prev - 0.03); 
-            const propulsion = kites.length * 2.0;
-            const drag = banners.length * 1.3;
-            const balloonDrag = balloons.length * 0.02; // Trailing balloons add subtle drag
-            return Math.max(1, 4 + propulsion - drag - balloonDrag); 
-          });
-
-          setScore((prev) => prev + speed * 0.015);
-          gameLoopRef.current = requestAnimationFrame(loop);
-        };
-        gameLoopRef.current = requestAnimationFrame(loop);
-        return () => cancelAnimationFrame(gameLoopRef.current);
-      }, [gameState, balloons.length, kites.length, banners.length, speed, isLanding]);
-
-      // Deploy functions
-      const deployBalloon = () => {
-        if (selectedEmojis.length < 3) return;
-        const randomEmoji = selectedEmojis[Math.floor(Math.random() * 3)];
-        setBalloons(prev => [...prev, { id: Date.now(), emoji: randomEmoji }]);
-      };
-      
-      const deployKite = () => setKites(prev => [...prev, { id: Date.now() }]);
-      const deployBanner = () => {
-        if (banners.length < BANNER_MESSAGES.length) {
-          const msg = BANNER_MESSAGES[banners.length].replace('{name}', playerName || 'my friend');
-          setBanners(prev => [...prev, { id: Date.now(), text: msg }]);
-        }
-      };
+          setScore(s => s + 0.1);
+        }, 30);
+        return () => clearInterval(loop);
+      }, [gameState, balloons.length, kites.length, banners.length]);
 
       return (
         <div style={{ 
-          width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', 
-          backgroundImage: `url(${bgImageUrl})`, backgroundSize: 'auto 100%', 
-          backgroundRepeat: 'repeat-x', 
-          backgroundPosition: `-${score * 10}px center`, // Slow scroll speed (changed from 35)
+          width: '100vw', height: '100vh', backgroundImage: `url(${bgImageUrl})`, 
+          backgroundSize: 'auto 100%', backgroundPosition: `-${score * 10}px center`,
           transition: 'background-position 0.1s linear'
         }}>
           
-          {/* OVERHAULED START MENU */}
           {gameState === 'start' && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.92)', zIndex: 2000 }}>
-              
-              {/* Tied-Up Airship Visual */}
-              <div style={{ position: 'relative', height: '200px', width: '300px', animation: 'groundedShake 5s infinite alternate' }}>
-                <img src={shipImageUrl} style={{ height: '110px', position: 'absolute', bottom: '20px', left: '95px', filter: 'drop-shadow(2px 5px 8px rgba(0,0,0,0.3))' }} />
-                
-                {/* Ropes tying it down to invisible stakes */}
-                <div style={{ position: 'absolute', width: '2px', height: '70px', background: 'rgba(0,0,0,0.5)', bottom: '0px', left: '120px', transform: 'rotate(20deg)' }}></div>
-                <div style={{ position: 'absolute', width: '2px', height: '70px', background: 'rgba(0,0,0,0.5)', bottom: '0px', left: '180px', transform: 'rotate(-20deg)' }}></div>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.95)' }}>
+              <div style={{ position: 'relative', height: '180px', animation: 'groundedShake 4s infinite' }}>
+                <div style={{ position: 'absolute', width: '2px', height: '60px', background: '#333', bottom: '-5px', left: '130px', transform: 'rotate(25deg)', opacity: 0.6 }}></div>
+                <div style={{ position: 'absolute', width: '2px', height: '60px', background: '#333', bottom: '-5px', left: '170px', transform: 'rotate(-25deg)', opacity: 0.6 }}></div>
+                <img src={shipImageUrl} className="ship-rendering" style={{ position: 'relative' }} />
               </div>
-
-              <h1 style={{ fontSize: '2.5rem', fontFamily: "'Permanent Marker', cursive", color: '#333', marginTop: '-30px', marginBottom: '15px' }}>Acorn Aviator</h1>
-              
-              {/* Asking Name */}
-              <input type="text" placeholder="Your Name" value={playerName} onChange={(e) => setPlayerName(e.target.value)} style={{ padding: '12px', fontSize: '1.2rem', marginBottom: '20px', borderRadius: '8px', textAlign: 'center', border: '2px solid #ccc', width: '80%' }} />
-              
-              {/* Asking 3 ballon emoji set */}
-              <div style={{textAlign: 'center', marginBottom: '25px', width: '90%', padding: '15px', background: 'rgba(0,0,0,0.05)', borderRadius: '15px'}}>
-                <p style={{margin: '0 0 10px 0', fontWeight: 'bold'}}>Select Exactly Three Balloon Emojis ❤️👄🍑🍆:</p>
-                <div style={{display: 'flex', justifyContent: 'center', flexWrap: 'wrap'}}>
-                  {ALL_AVAILABLE_EMOJIS.map(emoji => (
-                    <button 
-                      key={emoji}
-                      onClick={() => toggleEmojiSelection(emoji)}
-                      className={`emoji-picker-btn ${selectedEmojis.includes(emoji) ? 'selected' : ''}`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-                <p style={{fontSize: '0.9rem', color: selectedEmojis.length === 3 ? '#4CAF50' : '#888', fontWeight: 'bold', marginTop: '10px'}}>
-                  Selected: {selectedEmojis.length} / 3
-                </p>
+              <h1 style={{ fontFamily: "'Permanent Marker', cursive", fontSize: '2.5rem', margin: '10px 0' }}>Acorn Aviator</h1>
+              <input type="text" placeholder="Pilot Name" value={playerName} onChange={e => setPlayerName(e.target.value)} style={{ padding: '15px', borderRadius: '12px', border: '2px solid #ddd', textAlign: 'center', width: '250px', fontSize: '1.1rem' }} />
+              <div style={{ margin: '20px 0' }}>
+                {ALL_EMOJIS.map(e => (
+                  <button key={e} onClick={() => {
+                    if (selectedEmojis.includes(e)) setSelectedEmojis(prev => prev.filter(x => x !== e));
+                    else if (selectedEmojis.length < 3) setSelectedEmojis(prev => [...prev, e]);
+                  }} className={`emoji-picker-btn ${selectedEmojis.includes(e) ? 'selected' : ''}`}>{e}</button>
+                ))}
               </div>
-
-              <button 
-                onClick={startGame} 
-                disabled={selectedEmojis.length !== 3}
-                style={{ padding: '15px 50px', fontSize: '1.6rem', backgroundColor: selectedEmojis.length === 3 ? '#4CAF50' : '#888', color: 'white', border: 'none', borderRadius: '15px', cursor: selectedEmojis.length === 3 ? 'pointer' : 'default', transition: 'background-color 0.2s' }}
-              >
-                Untie & Fly!
-              </button>
+              <button onClick={startGame} disabled={selectedEmojis.length < 3} style={{ padding: '18px 60px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '20px', fontSize: '1.4rem', fontWeight: 'bold' }}>Untie & Fly!</button>
             </div>
           )}
 
-          {/* GAMEPLAY */}
           {gameState === 'playing' && (
-            <div 
-                className={balloons.length === 0 ? "sway-effect" : ""} 
-                style={{ 
-                    position: 'absolute', 
-                    left: `${shipX}%`, // Use dynamic horizontal position
-                    bottom: `${altitude}%`, 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    alignItems: 'center', 
-                    transition: 'bottom 0.2s linear, left 0.2s linear' // Smooth horizontal movement
-                }}
-            >
+            <div style={{ position: 'absolute', left: `${shipX}%`, bottom: `${altitude}%`, display: 'flex', alignItems: 'center', transition: 'left 0.5s ease-out, bottom 0.2s linear' }}>
               
-              {/* Trailing balloons strip same as banner/kites */}
-              <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
-                <div style={{ position: 'absolute', right: '110%', bottom: '30px', display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'flex-end' }}>
-                  {smokeSignals.map((s) => (
-                    <div key={s.id} style={{ backgroundColor: 'white', padding: '8px 15px', borderRadius: '20px', fontSize: '1.1rem', color: '#444', fontFamily: "'Permanent Marker', cursive", boxShadow: '0 5px 15px rgba(0,0,0,0.2)', animation: 'driftBehind 2s forwards', whiteSpace: 'nowrap' }}>{s.text}</div>
-                  ))}
-                </div>
-
-                {/* Trail Banners (Same strip rendering style - dragging left) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginRight: '15px', alignItems: 'flex-end' }}>
-                    {banners.map((b, index) => (
-                        <div key={b.id} style={{ 
-                            backgroundColor: '#FFF9E6', 
-                            border: '1px solid #E2C792', 
-                            padding: '8px 12px', 
-                            borderRadius: '4px 12px 12px 4px', 
-                            fontSize: '1rem', 
-                            color: '#000', 
-                            fontFamily: "'Permanent Marker', cursive", 
-                            boxShadow: '3px 3px 6px rgba(0,0,0,0.2)', 
-                            whiteSpace: 'nowrap',
-                            // The further back, the more it drops visually (dragging down and left)
-                            marginTop: `${index * 5}px` 
-                        }}>
-                            {b.text}
-                        </div>
-                    ))}
-                    {/* The horizontal rope connecting banners to ship */}
-                    {banners.length > 0 && <div style={{ width: '40px', background: 'rgba(255,255,255,0.6)', height: '2px', position: 'absolute', right: '-40px', top: '15px' }}></div>}
-                </div>
-
-                {/* THE SHIP */}
-                <img src={shipImageUrl} style={{ height: '110px', zIndex: 20, filter: 'drop-shadow(2px 5px 8px rgba(0,0,0,0.4))' }} />
-
-                {/* Trail Kites (Same strip rendering style - pulling right) */}
-                {kites.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', marginLeft: '-10px', position: 'relative' }}>
-                    {/* The horizontal rope pulling right */}
-                    <div style={{ width: '50px', height: '2px', backgroundColor: 'rgba(255,255,255,0.4)' }}></div>
-                    <div style={{ display: 'flex', gap: '2px', fontSize: '1.8rem', position: 'absolute', left: '40px' }}>
-                        {kites.map((k) => <span key={k.id}>🪁</span>)}
+              {/* Dragging Left */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginRight: '20px', alignItems: 'flex-end' }}>
+                {banners.map(b => (
+                    <div key={b.id} style={{ background: '#FFF9E6', border: '1px solid #E2C792', padding: '10px 15px', borderRadius: '5px 15px 15px 5px', fontFamily: "'Permanent Marker', cursive", fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                        {b.text}
                     </div>
+                ))}
+              </div>
+
+              <div style={{ position: 'relative' }}>
+                <img src={shipImageUrl} className="ship-rendering" style={{ animation: 'sway 4s infinite ease-in-out' }} />
+                
+                {/* Vertical Balloon Strip - Now with actual tether line */}
+                <div style={{ position: 'absolute', top: '95px', left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '2px', background: 'rgba(255,255,255,0.7)', height: `${balloons.length * 28}px`, transition: 'height 0.3s' }}></div>
+                    <div style={{ display: 'flex', flexDirection: 'column-reverse', marginTop: '-5px' }}>
+                        {balloons.map(b => <span key={b.id} style={{ fontSize: '2rem', marginTop: '-15px', textShadow: '0 4px 6px rgba(0,0,0,0.2)' }}>{b.emoji}</span>)}
+                    </div>
+                </div>
+              </div>
+
+              {/* Pulling Right */}
+              {kites.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', marginLeft: '-15px' }}>
+                  <div style={{ width: '50px', height: '2px', background: 'rgba(255,255,255,0.6)' }}></div>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    {kites.map(k => <span key={k.id} style={{ fontSize: '2.2rem' }}>🪁</span>)}
                   </div>
-                )}
-                
-                {/* TRAILING EMOJI BALLOONS STRIP (Vertical strip same style) */}
-                {balloons.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'absolute', left: '10px', top: '100px', marginTop: '10px' }}>
-                        {/* The Rope/Strip connecting them all */}
-                        <div style={{ width: '2px', background: 'rgba(255,255,255,0.6)', height: `${balloons.length * 30}px`, position: 'absolute', top: 0, zIndex: 5 }}></div>
-                        {balloons.map((b) => (
-                            <span key={b.id} style={{ fontSize: '2rem', margin: '5px 0', position: 'relative', zIndex: 10, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
-                                {b.emoji}
-                            </span>
-                        ))}
-                    </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* PERSISTENT MOBILE NAV BAR */}
           {gameState === 'playing' && (
-            <div className="nav-bar" style={{ opacity: isLanding ? 0 : 1, transition: 'opacity 1s' }}>
-              <button onClick={deployBanner} disabled={banners.length >= 4} className="control-btn" style={{ backgroundColor: '#FF6B6B' }}>
-                <span>Banner</span>
-                <span>🎏</span>
-              </button>
+            <div className="nav-bar">
+              <button onClick={() => {
+                if (banners.length < 4) setBanners([...banners, { id: Math.random(), text: BANNER_MESSAGES[banners.length].replace('{name}', playerName || 'Pilot') }]);
+              }} className="control-btn" style={{ background: '#FF6B6B' }}>Banner 🎏</button>
               
-              <button onClick={dropAll} className="control-btn scissor-btn" style={{ backgroundColor: '#444' }}>
-                ✂️
-              </button>
+              <button onClick={() => { setBalloons([]); setKites([]); setBanners([]); }} className="control-btn" style={{ background: '#444', flex: '0 0 80px', borderRadius: '50%', fontSize: '1.8rem' }}>✂️</button>
               
-              <button onClick={deployBalloon} className="control-btn" style={{ backgroundColor: '#4ECDC4' }}>
-                <span>Bouquet</span>
-                {/* Visual feedback of the selected emojis */}
-                <span style={{fontSize: '0.8rem'}}>{selectedEmojis.join('')}</span>
-              </button>
+              <button onClick={() => setBalloons([...balloons, { id: Math.random(), emoji: selectedEmojis[Math.floor(Math.random() * 3)] }])} className="control-btn" style={{ background: '#4ECDC4' }}>Bouquet 🎈</button>
               
-              <button onClick={deployKite} className="control-btn" style={{ backgroundColor: '#FFE66D', color: '#333' }}>
-                <span>Kite</span>
-                <span>🪁</span>
-              </button>
+              <button onClick={() => setKites([...kites, { id: Math.random() }])} className="control-btn" style={{ background: '#FFE66D', color: '#333' }}>Kite 🪁</button>
             </div>
           )}
 
-          {/* GAME OVER Screen */}
           {gameState === 'gameover' && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', color: 'white', zIndex: 3000 }}>
-              <h2 style={{fontSize: '2.5rem', fontFamily: "'Permanent Marker', cursive"}}>Flight Over</h2>
-              <p style={{fontSize: '1.2rem', marginBottom: '30px'}}>{playerName || 'Pilot'}, you traveled {Math.floor(score)} meters.</p>
-              <button onClick={() => setGameState('start')} style={{ padding: '15px 40px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.2rem', cursor: 'pointer' }}>Try Again</button>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', color: 'white' }}>
+              <h2 style={{ fontFamily: "'Permanent Marker', cursive", fontSize: '3rem' }}>Landed!</h2>
+              <button onClick={() => setGameState('start')} style={{ padding: '20px 60px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '20px', fontSize: '1.3rem' }}>Fly Again</button>
             </div>
           )}
         </div>

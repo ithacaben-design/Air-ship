@@ -14,7 +14,7 @@
       height: 100vh;
       overflow: hidden;
       font-family: sans-serif;
-      background-color: #87CEEB;
+      background-color: #1a1a1a; /* Fallback dark color */
     }
 
     /* Sharpie Font & Animations */
@@ -34,10 +34,8 @@
 </head>
 <body>
   
-  <!-- This is where our game will be injected -->
   <div id="root"></div>
 
-  <!-- Our Game Code -->
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
@@ -49,7 +47,7 @@
     ];
 
     function App() {
-      const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'gameover'
+      const [gameState, setGameState] = useState('start'); 
       const [playerName, setPlayerName] = useState('');
       const [balloonEmoji, setBalloonEmoji] = useState('🎈');
       
@@ -65,6 +63,9 @@
 
       const gameLoopRef = useRef();
 
+      // Background image from your GitHub Repo
+      const bgImageUrl = "https://raw.githubusercontent.com/ithacaben-design/Air-ship/main/PXL_20231005_222618446.PORTRAIT-PANO.jpg";
+
       // Reset Game
       const startGame = () => {
         setAltitude(50);
@@ -78,7 +79,7 @@
         setGameState('playing');
       };
 
-      // Trigger Smoke Signals and Descent automatically after the 4th banner
+      // Trigger Smoke Signals and Descent
       useEffect(() => {
         if (banners.length === 4 && smokeSignals.length === 0 && !isLanding) {
           const timer1 = setTimeout(() => {
@@ -105,5 +106,196 @@
       useEffect(() => {
         if (gameState !== 'playing') return;
 
-        const loop = ()
+        const loop = () => {
+          setAltitude((prev) => {
+            let newAltitude;
+            if (isLanding) {
+              newAltitude = prev - 0.3; 
+            } else {
+              const lift = balloons.length * 0.8;
+              const gravity = 1.5;
+              newAltitude = prev + (lift - gravity);
+            }
+            if (newAltitude > 95) newAltitude = 95;
             
+            if (newAltitude <= 0) {
+              if (isLanding) setGameState('start');
+              else setGameState('gameover');
+              return 0;
+            }
+            return newAltitude;
+          });
+
+          setSpeed((prev) => {
+            if (isLanding) return Math.max(1, prev - 0.05); 
+            const propulsion = kites.length * 2;
+            const drag = banners.length * 1.5;
+            let newSpeed = 5 + propulsion - drag;
+            return Math.max(1, newSpeed); 
+          });
+
+          setScore((prev) => prev + speed * 0.01);
+          gameLoopRef.current = requestAnimationFrame(loop);
+        };
+
+        gameLoopRef.current = requestAnimationFrame(loop);
+        return () => cancelAnimationFrame(gameLoopRef.current);
+      }, [gameState, balloons.length, kites.length, banners.length, speed, isLanding]);
+
+      const deployBalloon = () => setBalloons([...balloons, { id: Date.now(), emoji: balloonEmoji }]);
+      const deployKite = () => setKites([...kites, { id: Date.now() }]);
+      const deployBanner = () => {
+        if (banners.length < BANNER_MESSAGES.length) {
+          const rawMessage = BANNER_MESSAGES[banners.length];
+          const personalizedMessage = rawMessage.replace('{name}', playerName || 'my friend');
+          setBanners([...banners, { id: Date.now(), text: personalizedMessage }]);
+        }
+      };
+
+      return (
+        <div style={{ 
+          width: '100vw', 
+          height: '100vh', 
+          overflow: 'hidden', 
+          position: 'relative', 
+          // Parallax Scrolling Background
+          backgroundImage: `url(${bgImageUrl})`,
+          backgroundSize: 'auto 100%', // Scale to fit screen height
+          backgroundRepeat: 'repeat-x', // Loop horizontally
+          backgroundPosition: `-${score * 20}px center`, // Scroll based on distance flown!
+          transition: 'background-position 0.1s linear'
+        }}>
+          
+          {/* START MENU */}
+          {gameState === 'start' && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.85)', zIndex: 50, transition: 'opacity 1s ease-in' }}>
+              <h1 style={{ fontSize: '4rem', color: '#333', marginBottom: '10px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.2)' }}>Acorn Aviator</h1>
+              
+              <input 
+                type="text" 
+                placeholder="Enter your name..." 
+                value={playerName} 
+                onChange={(e) => setPlayerName(e.target.value)}
+                style={{ padding: '12px', fontSize: '1.2rem', marginBottom: '15px', borderRadius: '8px', border: '2px solid #ccc', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+              />
+              
+              <div style={{ marginBottom: '25px', textAlign: 'center' }}>
+                <p style={{ fontWeight: 'bold', color: '#444' }}>Choose your Balloon Emoji:</p>
+                <input 
+                  type="text" 
+                  value={balloonEmoji} 
+                  onChange={(e) => setBalloonEmoji(e.target.value.substring(0, 2))}
+                  style={{ padding: '10px', fontSize: '2.5rem', width: '90px', textAlign: 'center', borderRadius: '8px', border: '2px solid #ccc', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                />
+              </div>
+
+              <button onClick={startGame} style={{ padding: '15px 50px', fontSize: '1.8rem', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.2)' }}>Fly!</button>
+            </div>
+          )}
+
+          {/* GAME UI */}
+          {gameState === 'playing' && (
+            <>
+              {/* Scoreboard updated to have a slight background so it's readable over the mountains */}
+              <div style={{ position: 'absolute', top: 20, left: 20, fontSize: '1.5rem', fontWeight: 'bold', color: '#333', backgroundColor: 'rgba(255,255,255,0.7)', padding: '10px 20px', borderRadius: '12px', opacity: isLanding ? 0 : 1, transition: 'opacity 2s', zIndex: 30 }}>
+                Distance: {Math.floor(score)}m | Speed: {Math.floor(speed)}mph
+              </div>
+
+              {/* THE SHIP */}
+              <div style={{ position: 'absolute', left: '40%', bottom: `${altitude}%`, transition: 'bottom 0.1s linear', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                
+                {/* TETHERED BALLOONS (Lift) */}
+                <div style={{ display: 'flex', gap: '5px', marginBottom: '10px', fontSize: '2rem' }}>
+                  {balloons.map((b) => <span key={b.id} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>{b.emoji}</span>)}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                  
+                  {/* SMOKE SIGNALS (Trailing behind) */}
+                  <div style={{ position: 'absolute', right: '100%', marginRight: '30px', bottom: '20px', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'flex-end', zIndex: 5 }}>
+                    {smokeSignals.map((s) => (
+                      <div key={s.id} style={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+                        padding: '15px 25px', 
+                        borderRadius: '40px 40px 0 40px', 
+                        fontSize: '1.4rem', 
+                        color: '#444', 
+                        fontFamily: "'Permanent Marker', cursive", 
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.2)', 
+                        whiteSpace: 'nowrap',
+                        border: '2px solid rgba(200, 200, 200, 0.3)',
+                        animation: 'driftBehind 1.5s ease-out forwards'
+                      }}>
+                        {s.text}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* TETHERED BANNERS (Drag) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginRight: '10px', alignItems: 'flex-end', zIndex: 10 }}>
+                    {banners.map((b) => (
+                      <div key={b.id} style={{ 
+                        backgroundColor: '#FFF9E6', 
+                        border: '2px solid #E2C792', 
+                        padding: '8px 15px', 
+                        borderRadius: '4px 12px 12px 4px', 
+                        fontSize: '1.3rem', 
+                        color: '#000', 
+                        fontFamily: "'Permanent Marker', cursive", 
+                        textShadow: '0.5px 0.5px 0px rgba(0,0,0,0.5)', 
+                        filter: 'blur(0.4px)', 
+                        boxShadow: '2px 2px 8px rgba(0,0,0,0.3)', 
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {b.text}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* SQUIRREL SHIP - Added shadow so it pops off the background */}
+                  <div style={{ fontSize: '4rem', zIndex: 20, filter: 'drop-shadow(2px 4px 6px rgba(0,0,0,0.4))' }}>🌰</div>
+
+                  {/* TETHERED KITES (Speed) */}
+                  <div style={{ display: 'flex', gap: '5px', marginLeft: '15px', fontSize: '2rem', zIndex: 10 }}>
+                    {kites.map((k) => <span key={k.id} style={{ filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))' }}>🪁</span>)}
+                  </div>
+                </div>
+              </div>
+
+              {/* CONTROLS */}
+              <div style={{ position: 'absolute', bottom: 30, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '20px', opacity: isLanding ? 0 : 1, transition: 'opacity 1s ease-out', pointerEvents: isLanding ? 'none' : 'auto', zIndex: 30 }}>
+                <button 
+                  onClick={deployBanner} 
+                  disabled={banners.length >= 4}
+                  style={{ 
+                    padding: '15px', fontSize: '1.2rem', backgroundColor: banners.length >= 4 ? '#ccc' : '#FF6B6B', 
+                    color: 'white', border: 'none', borderRadius: '12px', cursor: banners.length >= 4 ? 'default' : 'pointer', 
+                    boxShadow: '0 6px 10px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  Deploy Banner 🎏<br/><small>(Slow Down)</small>
+                </button>
+                <button onClick={deployBalloon} style={{ padding: '15px', fontSize: '1.2rem', backgroundColor: '#4ECDC4', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 6px 10px rgba(0,0,0,0.2)' }}>Add Balloon {balloonEmoji}<br/><small>(Lift Up)</small></button>
+                <button onClick={deployKite} style={{ padding: '15px', fontSize: '1.2rem', backgroundColor: '#FFE66D', color: '#333', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 6px 10px rgba(0,0,0,0.2)' }}>Fly Kite 🪁<br/><small>(Speed Up)</small></button>
+              </div>
+            </>
+          )}
+
+          {/* CRASH SCREEN */}
+          {gameState === 'gameover' && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', color: 'white', zIndex: 50 }}>
+              <h1 style={{ fontSize: '4.5rem', marginBottom: '10px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>Oops!</h1>
+              <p style={{ fontSize: '1.8rem', marginBottom: '40px', textAlign: 'center', maxWidth: '80%' }}>You hit the ground, {playerName || 'my friend'}.</p>
+              <button onClick={() => setGameState('start')} style={{ padding: '15px 50px', fontSize: '1.8rem', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>Fly Again</button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Render the React app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

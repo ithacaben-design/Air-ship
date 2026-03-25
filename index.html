@@ -1,39 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Air-ship | Ben Bear</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            /* Using your specific filename */
-            background: url('./PXL_20231005_222618446.PORTRAIT-PANO.jpg') no-repeat center center fixed; 
-            background-size: cover;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            text-align: center;
-        }
-        .overlay {
-            background: rgba(0, 0, 0, 0.4); 
-            padding: 2.5rem;
-            border-radius: 20px;
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        h1 { font-size: 3.5rem; margin: 0; letter-spacing: 2px; }
-        p { font-size: 1.1rem; opacity: 0.8; margin-top: 10px; text-transform: uppercase; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acorn Aviator</title>
+  
+  <style>
+    /* Base Reset */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+      background-color: #87CEEB;
+    }
+
+    /* Sharpie Font & Animations */
+    @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
+    
+    @keyframes driftBehind {
+      from { opacity: 0; transform: translate(-20px, 10px) scale(0.8); }
+      to { opacity: 1; transform: translate(0, 0) scale(1); }
+    }
+  </style>
+
+  <!-- React & ReactDOM (Loaded via CDN) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel to compile our JSX in the browser -->
+  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-    <div class="overlay">
-        <h1>Air-ship</h1>
-        <p>Zen Bear Scholar | Spring 2026</p>
-    </div>
-</body>
-</html>
+  
+  <!-- This is where our game will be injected -->
+  <div id="root"></div>
+
+  <!-- Our Game Code -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const BANNER_MESSAGES = [
+      "I love you, {name}.",
+      "I see all the hard work you're doing, {name}.",
+      "I'm grateful to you for being so good, {name}.",
+      "Everyone is doing their best and their best is good enough, {name}."
+    ];
+
+    function App() {
+      const [gameState, setGameState] = useState('start'); // 'start', 'playing', 'gameover'
+      const [playerName, setPlayerName] = useState('');
+      const [balloonEmoji, setBalloonEmoji] = useState('🎈');
+      
+      // Physics & Ship State
+      const [altitude, setAltitude] = useState(50);
+      const [speed, setSpeed] = useState(5);
+      const [balloons, setBalloons] = useState([]);
+      const [kites, setKites] = useState([]);
+      const [banners, setBanners] = useState([]);
+      const [smokeSignals, setSmokeSignals] = useState([]);
+      const [isLanding, setIsLanding] = useState(false);
+      const [score, setScore] = useState(0);
+
+      const gameLoopRef = useRef();
+
+      // Reset Game
+      const startGame = () => {
+        setAltitude(50);
+        setSpeed(5);
+        setBalloons([{ id: Date.now(), emoji: balloonEmoji }]); 
+        setKites([]);
+        setBanners([]);
+        setSmokeSignals([]);
+        setIsLanding(false);
+        setScore(0);
+        setGameState('playing');
+      };
+
+      // Trigger Smoke Signals and Descent automatically after the 4th banner
+      useEffect(() => {
+        if (banners.length === 4 && smokeSignals.length === 0 && !isLanding) {
+          const timer1 = setTimeout(() => {
+            setSmokeSignals(prev => [...prev, { id: 'smoke1', text: "I miss you." }]);
+          }, 2000); 
+          
+          const timer2 = setTimeout(() => {
+            setSmokeSignals(prev => [...prev, { id: 'smoke2', text: "I'll see you soon." }]);
+          }, 5000); 
+
+          const timer3 = setTimeout(() => {
+            setIsLanding(true);
+          }, 7000);
+          
+          return () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+            clearTimeout(timer3);
+          };
+        }
+      }, [banners.length, smokeSignals.length, isLanding]);
+
+      // Game Loop
+      useEffect(() => {
+        if (gameState !== 'playing') return;
+
+        const loop = ()
+            

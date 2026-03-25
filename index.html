@@ -1,227 +1,175 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Air-ship Simulator v1.0</title>
-    <style>
-        /* 1. CORE LAYOUT */
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
-        body, html { 
-            height: 100%; width: 100%; 
-            overflow: hidden; 
-            background-color: #000;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        /* 2. THE BACKGROUND PHOTO */
-        .scene {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.5)), 
-                              url('PXL_20231005_222618446.PORTRAIT-01.COVER.jpg');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* 3. HUD DISPLAY */
-        #hud {
-            padding: 15px;
-            background: rgba(0, 20, 20, 0.9);
-            border-bottom: 2px solid #00ffcc;
-            color: #00ffcc;
-            font-size: 11px;
-            z-index: 100;
-            text-transform: uppercase;
-        }
-        .stat { color: #fff; }
-
-        /* 4. THE SHIP & ATTACHMENTS */
-        #stage {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        #flight-unit {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* SHIP IMAGE */
-        #ship-img {
-            width: 70vw;
-            max-grow: 500px;
-            z-index: 10;
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.7));
-            animation: engine 0.1s infinite alternate;
-        }
-
-        /* VISIBLE BALLOONS (Appear Above) */
-        #balloon-visual {
-            position: absolute;
-            top: -60px;
-            width: 100px; height: 120px;
-            background: radial-gradient(circle at 30% 30%, #ff4d4d, #990000);
-            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-            opacity: 0;
-            transition: 0.5s;
-            z-index: 5;
-        }
-        .lift-on #balloon-visual { opacity: 1; transform: translateY(-20px); }
-
-        /* VISIBLE KITE LINES (Pull Right) */
-        #kite-visual {
-            position: absolute;
-            left: 100%;
-            width: 100vw; height: 2px;
-            background: rgba(255, 255, 255, 0.3);
-            opacity: 0;
-            transition: 0.5s;
-        }
-        .kite-on #kite-visual { opacity: 1; }
-
-        /* THE BANNER (Unrolls Left) */
-        #banner {
-            position: absolute;
-            right: 85%;
-            background: linear-gradient(to bottom, #ffcc00, #d4af37);
-            color: #000;
-            width: 0; height: 0;
-            overflow: hidden;
-            transition: 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            white-space: nowrap;
-            box-shadow: -5px 5px 15px rgba(0,0,0,0.5);
-            border-radius: 3px;
-        }
-
-        /* Banner Stages */
-        .stg-1 { width: 150px !important; height: 40px !important; font-size: 10px; border: 2px solid #fff; }
-        .stg-2 { width: 280px !important; height: 80px !important; font-size: 16px; border: 3px solid #fff; }
-        .stg-3 { width: 450px !important; height: 140px !important; font-size: 22px; border: 4px solid #fff; }
-
-        /* 5. TOUCH CONTROLS */
-        #controls {
-            padding: 15px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            background: #000;
-            z-index: 200;
-        }
-
-        .btn {
-            background: #1a1a1a;
-            border: 1px solid #00ffcc;
-            color: #00ffcc;
-            padding: 18px;
-            font-size: 13px;
-            text-transform: uppercase;
-            border-radius: 8px;
-            font-family: inherit;
-        }
-
-        .active { background: #00ffcc !important; color: #000 !important; font-weight: bold; }
-
-        @keyframes engine { from { transform: translateY(0); } to { transform: translateY(2px); } }
-
-        @media (max-width: 600px) {
-            .stg-3 { width: 65vw !important; font-size: 14px !important; }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="scene">
-        <!-- HUD -->
-        <div id="hud">
-            ALT: <span id="h-alt" class="stat">1200FT</span> | 
-            DRAG: <span id="h-drag" class="stat">LOW</span> | 
-            POS: <span id="h-pos" class="stat">CENTER</span>
-        </div>
-
-        <!-- STAGE -->
-        <div id="stage">
-            <div id="flight-unit">
-                <!-- Visible Balloon -->
-                <div id="balloon-visual"></div>
-                <!-- Visible Kite Lines -->
-                <div id="kite-visual"></div>
-                <!-- Deployable Banner -->
-                <div id="banner"></div>
-                <!-- Main Air-ship Asset -->
-                <img src="1774454560922.png" id="ship-img" alt="Air-ship">
-            </div>
-        </div>
-
-        <!-- CONTROLS -->
-        <div id="controls">
-            <button class="btn" id="btn-lift" onclick="handle('lift')">Balloons</button>
-            <button class="btn" id="btn-kite" onclick="handle('kite')">Kites</button>
-            <button class="btn" style="grid-column: span 2" onclick="handle('banner')">Cycle Banner</button>
-        </div>
-    </div>
-
-    <script>
-        let state = { lift: false, kite: false, stage: 0 };
-
-        function handle(type) {
-            const unit = document.getElementById('flight-unit');
-            const b = document.getElementById('banner');
-
-            if (type === 'lift') {
-                state.lift = !state.lift;
-                document.getElementById('btn-lift').classList.toggle('active');
-                unit.parentElement.classList.toggle('lift-on');
-            }
-
-            if (type === 'kite') {
-                state.kite = !state.kite;
-                document.getElementById('btn-kite').classList.toggle('active');
-                unit.parentElement.classList.toggle('kite-on');
-                // Retract banner if we lose kite stability
-                if (!state.kite && state.stage > 1) state.stage = 0;
-            }
-
-            if (type === 'banner') {
-                if (!state.kite && state.stage >= 1) {
-                    alert("KITE STABILITY REQUIRED FOR LARGE PAYLOADS");
-                    state.stage = 0;
-                } else {
-                    state.stage = (state.stage + 1) % 4;
+<!-- ... existing code ... -->
+                    if (shipImg.complete && shipImg.naturalWidth > 0) {
+                        ctx.drawImage(shipImg, -this.width/2, -this.height/2, this.width, this.height);
+                    } else {
+                        // Fallback geometry
+                        ctx.fillStyle = '#A0522D';
+                        ctx.beginPath();
+                        ctx.ellipse(0, 0, this.width/2.5, this.height/3, 0, 0, Math.PI*2);
+                        ctx.fill();
+                        
+                        // Emoji Balloon Fallback
+                        ctx.font = `${this.height}px Arial`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('🎈', 0, -this.height/1.5);
+                    }
+                    ctx.restore();
                 }
             }
 
-            // Update Physics
-            let x = state.kite ? "20vw" : "0";
-            let y = state.lift ? "-80px" : "0";
-            unit.style.transform = `translate(${x}, ${y})`;
+            class Particle {
+                constructor(x, y) {
+                    this.x = x;
+                    this.y = y;
+                    this.vx = -Math.random() * 2 - 1;
+                    this.vy = (Math.random() - 0.5) * 1;
+                    this.life = 1.0;
+                    this.decay = Math.random() * 0.02 + 0.02;
+                    this.size = Math.random() * 5 + 3;
+                }
+                update() {
+                    this.x += this.vx - gameSpeed * 0.5;
+                    this.y += this.vy;
+                    this.life -= this.decay;
+                }
+                draw() {
+                    ctx.fillStyle = `rgba(200, 200, 200, ${this.life})`;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
 
-            // Update Banner
-            b.className = '';
-            if (state.stage === 1) { b.classList.add('stg-1'); b.innerText = "SQUIRREL_1"; }
-            if (state.stage === 2) { b.classList.add('stg-2'); b.innerText = "SKY_SIM_AD"; }
-            if (state.stage === 3) { b.classList.add('stg-3'); b.innerText = "GRAND OPENING"; }
-            if (state.stage === 0) { b.innerText = ""; }
+            // Emoji Balloon Obstacles
+            class Obstacle {
+                constructor() {
+                    this.x = canvas.width;
+                    this.y = Math.random() * (canvas.height - 100) + 50;
+                    this.size = Math.random() * 30 + 50;
+                    // Array of emoji balloons and random hazards!
+                    const emojis = ['🎈', '🎈', '🎈', '🎈', '🐡', '👽', '🎃'];
+                    this.emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                    this.hitbox = { w: this.size * 0.6, h: this.size * 0.8 };
+                }
+                update() { this.x -= gameSpeed; }
+                draw() {
+                    ctx.font = `${this.size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.emoji, this.x, this.y);
+                }
+            }
 
-            // Update HUD
-            document.getElementById('h-alt').innerText = state.lift ? "2500FT" : "1200FT";
-            document.getElementById('h-pos').innerText = state.kite ? "RIGHT_FLANK" : "CENTER";
-            document.getElementById('h-drag').innerText = state.stage > 1 ? "HIGH" : "LOW";
-        }
+            function triggerGameOver() {
+                currentState = STATE.GAMEOVER;
+                cancelAnimationFrame(animationId);
+                hud.classList.add('hidden');
+                controlsHint.classList.add('hidden');
+                gameOverScreen.classList.remove('hidden');
+                finalScoreDisplay.innerText = score;
+                isThrusting = false;
+            }
+
+            function initGame() {
+                player = new Player();
+                obstacles = [];
+                particles = [];
+                frames = 0;
+                score = 0;
+                gameSpeed = 4;
+                scoreDisplay.innerText = score;
+                currentState = STATE.PLAYING;
+                startScreen.classList.add('hidden');
+                gameOverScreen.classList.add('hidden');
+                hud.classList.remove('hidden');
+                controlsHint.classList.remove('hidden');
+                animate();
+            }
+
+            function thrustOn(e) { 
+                if (e.type !== 'keydown' || e.code === 'Space') {
+                    if (currentState === STATE.PLAYING) isThrusting = true;
+                }
+            }
+            function thrustOff(e) { 
+                if (e.type !== 'keyup' || e.code === 'Space') {
+                    isThrusting = false;
+                }
+            }
+
+            window.addEventListener('mousedown', thrustOn);
+            window.addEventListener('mouseup', thrustOff);
+            window.addEventListener('touchstart', thrustOn, {passive: false});
+            window.addEventListener('touchend', thrustOff);
+            window.addEventListener('keydown', thrustOn);
+            window.addEventListener('keyup', thrustOff);
+
+            startBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
+            restartBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
+
+            function animate() {
+                if(currentState !== STATE.PLAYING) return;
+                animationId = requestAnimationFrame(animate);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (bgImg.complete && bgImg.naturalWidth > 0) {
+                    ctx.drawImage(bgImg, bgX, 0, canvas.width, canvas.height);
+                    ctx.drawImage(bgImg, bgX + canvas.width, 0, canvas.width, canvas.height);
+                    bgX -= gameSpeed * 0.5;
+                    if (bgX <= -canvas.width) bgX = 0;
+                }
+
+                player.update();
+                player.draw();
+
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    particles[i].update();
+                    particles[i].draw();
+                    if (particles[i].life <= 0) particles.splice(i, 1);
+                }
+
+                if (frames % 70 === 0) obstacles.push(new Obstacle());
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let obs = obstacles[i];
+                    obs.update();
+                    obs.draw();
+
+                    let pRect = {
+                        x: player.x + player.hitbox.offsetX,
+                        y: player.y + player.hitbox.offsetY,
+                        w: player.hitbox.w,
+                        h: player.hitbox.h
+                    };
+                    let oRect = {
+                        x: obs.x - obs.hitbox.w/2,
+                        y: obs.y - obs.hitbox.h/2,
+                        w: obs.hitbox.w,
+                        h: obs.hitbox.h
+                    };
+
+                    if (
+                        pRect.x < oRect.x + oRect.w &&
+                        pRect.x + pRect.w > oRect.x &&
+                        pRect.y < oRect.y + oRect.h &&
+                        pRect.y + pRect.h > oRect.y
+                    ) {
+                        triggerGameOver();
+                    }
+
+                    if (obs.x + obs.size < 0) {
+                        obstacles.splice(i, 1);
+                        score += 10;
+                        scoreDisplay.innerText = score;
+                        if (score % 50 === 0) gameSpeed += 0.5; // Speed up over time
+                    }
+                }
+
+                frames++;
+            }
+        };
     </script>
 </body>
 </html>

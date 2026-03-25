@@ -2,56 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Origami Scout: Drift</title>
+    <title>Origami Scout: Mountain Panorama</title>
     <style>
-        body { margin: 0; background: #f0f4f8; overflow: hidden; font-family: 'Courier New', monospace; }
-        #world { width: 100vw; height: 100vh; position: relative; background: linear-gradient(#b3e5fc, #e1f5fe); }
-
-        /* The Fire Tower */
-        #tower {
-            position: absolute; bottom: 0; left: 80px;
-            width: 40px; height: 200px; border: 2px solid #000;
-            background: #fff; z-index: 5;
+        :root { --line: #000; --paper: #fff; }
+        body { margin: 0; padding: 0; background: #fafafa; font-family: 'Courier New', monospace; overflow: hidden;}
+        
+        /* THE GAME WORLD: This section displays your mountain panorama */
+        #world { 
+            width: 100vw; 
+            height: 100vh; 
+            position: relative; 
+            /* Set the panoramic image as the background */
+            background-image: url('image_0.png'); 
+            background-size: cover; /* Ensures the image covers the entire screen */
+            background-position: center bottom; /* Anchor it to the bottom of the sky */
+            background-repeat: no-repeat;
+            z-index: 1;
         }
-        #tower::before { content: ''; position: absolute; top: -20px; left: -10px; width: 60px; height: 20px; border: 2px solid #000; background: #fff; }
 
-        /* The Airship (Starts B&W) */
+        /* Moving the Fire Tower to a distant peak */
+        #tower {
+            position: absolute; 
+            bottom: 45%; /* Positioned up on a mountain peak to match panorama scale */
+            left: 20%;
+            width: 30px; 
+            height: 80px; 
+            border: 2px solid var(--line); 
+            background: rgba(255, 255, 255, 0.4); /* Faint paper, blended into landscape */
+            z-index: 5;
+        }
+        #tower::after { 
+            content: 'FIRE TOWER'; 
+            font-size: 8px; 
+            position: absolute; 
+            bottom: -15px; 
+            color: #ccc; /* Pale color to blend with distance */
+        }
+
+        /* The Airship: Redocked to the new Tower height */
         #ship {
-            position: absolute; bottom: 205px; left: 50px;
+            position: absolute; 
+            bottom: calc(45% + 10px); /* Positioned at the tower's re-dock height */
+            left: calc(20% + 5px);
             width: 90px; height: 45px;
             clip-path: polygon(0% 50%, 100% 0%, 75% 50%, 100% 100%);
-            background: #fff; border: 2px solid #000;
+            background: var(--paper);
             filter: drop-shadow(2px 2px 0 #000);
-            z-index: 20; cursor: pointer; transition: background 1.5s;
+            z-index: 20; 
+            cursor: pointer; 
+            transition: background 1.5s;
         }
         .fold { position: absolute; background: #000; }
         .s-line { top: 49%; left: 0; width: 100%; height: 2px; }
 
-        /* Tethers & Gear */
-        .tether { position: absolute; width: 1.5px; background: #000; height: 40px; top: -40px; left: 50%; transform-origin: bottom; }
-        .balloon { position: absolute; width: 22px; height: 28px; background: #ff5252; border: 2px solid #000; border-radius: 50%; top: -65px; left: calc(50% - 11px); }
-        .kite-tether { position: absolute; width: 30px; height: 1.5px; background: #000; left: -30px; top: 50%; }
-        .kite { position: absolute; width: 20px; height: 20px; background: #fff; border: 2px solid #000; transform: rotate(45deg); left: -50px; top: calc(50% - 10px); }
+        /* Banner & Gear */
+        #banner {
+            position: absolute; right: 95%; top: 15%;
+            width: 0; height: 35px;
+            background: rgba(255, 255, 255, 0.8); /* Slight opacity for distant feel */
+            border: 2px solid #000; border-right: none;
+            overflow: hidden; white-space: nowrap;
+            display: flex; align-items: center;
+            transition: width 2s ease-in-out;
+            font-size: 11px; font-weight: bold;
+            transform-origin: right center; z-index: -1;
+        }
+        #banner.unfurled { 
+            width: 420px; 
+            padding: 0 10px; 
+            border-right: 2px solid #000;
+            animation: flutter 0.6s infinite ease-in-out;
+        }
+        
+        @keyframes flutter {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-2px) rotate(1deg); }
+            75% { transform: translateY(2px) rotate(-1deg); }
+        }
+
+        .balloon { position: absolute; width: 22px; height: 28px; background: #ff5252; border: 2px solid #000; border-radius: 50%; top: -60px; left: 35px; z-index: 10; }
+        .kite { position: absolute; width: 22px; height: 22px; background: #fff; border: 2px solid #000; transform: rotate(45deg); left: -45px; top: 10px; z-index: 10; }
 
         /* Drifting Smoke */
         .smoke {
-            position: absolute; pointer-events: none;
-            font-weight: bold; font-size: 32px;
-            animation: driftAway 6s ease-out forwards;
+            position: absolute; pointer-events: none; font-weight: bold; font-size: 28px;
+            animation: driftAway 6s forwards;
         }
-
         @keyframes driftAway {
-            0% { transform: translate(0, 0) scale(1); opacity: 0; }
-            10% { opacity: 0.8; }
-            100% { transform: translate(40px, -250px) scale(2); opacity: 0; }
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            20% { opacity: 0.8; }
+            100% { transform: translate(40px, -220px) scale(1.8); opacity: 0; }
         }
 
-        /* Controls */
-        #ui { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); display: none; gap: 20px; }
-        button { 
-            padding: 12px 20px; border: 3px solid #000; background: #fff; 
-            cursor: pointer; font-family: 'Courier New'; font-weight: bold;
-        }
+        /* UI (No changes) */
+        #ui { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; gap: 15px; z-index: 100;}
+        button { padding: 10px 15px; border: 2px solid #000; background: #fff; cursor: pointer; font-family: inherit; font-weight: bold;}
         button:hover { background: #000; color: #fff; }
     </style>
 </head>
@@ -59,30 +104,46 @@
 
 <div id="world">
     <div id="tower"></div>
-    <div id="ship" onclick="wakeUp()"><div class="fold s-line"></div></div>
+    <div id="ship" onclick="wakeUp()">
+        <div class="fold s-line"></div>
+        <div id="banner">YOU <span id="pilot-slot">______</span> Are the best. Keep being awesome i</div>
+    </div>
 </div>
 
 <div id="ui">
     <button onclick="deploy('kite')">🪁 KITE</button>
     <button onclick="deploy('balloon')">🎈 BALLOON</button>
+    <button onclick="unfurlBanner()">📜 BANNER</button>
     <button onclick="signalReturn()">🔥 LAND</button>
 </div>
 
 <script>
     const ship = document.getElementById('ship');
+    const banner = document.getElementById('banner');
+    const pilotSlot = document.getElementById('pilot-slot');
     const ui = document.getElementById('ui');
-    let x = 50, y = 205, speed = 0, vy = 0, gravity = 0.1, lift = 0.1, isFlying = false;
+    
+    // STARTING POSITION Reset for new tower location
+    const startX = window.innerWidth * 0.2 + 5; // Re-docked to Tower left
+    const startY = window.innerHeight * 0.45 + 10; // Re-docked to Tower height
+
+    let x = startX, y = startY, speed = 0, vy = 0, gravity = 0.1, lift = 0.1, isFlying = false;
+
+    // Reset ship visually for loading
+    ship.style.left = startX + 'px';
+    ship.style.bottom = startY + 'px';
 
     function wakeUp() {
         if (isFlying) return;
         const pilot = prompt("Pilot Name?");
-        const song = prompt("Song?");
-        const bird = prompt("Bird inspiration? (Falcon, Albatross, Sparrow)").toLowerCase();
+        const bird = prompt("Bird Inspiration (Falcon, Albatross, Sparrow)?").toLowerCase();
+        
+        pilotSlot.innerText = pilot || "Friend";
         
         // Color in based on bird
         if(bird.includes('fal')) ship.style.background = '#455a64';
-        else if(bird.includes('alb')) ship.style.background = '#e0e0e0';
-        else ship.style.background = '#795548';
+        else if(bird.includes('alb')) ship.style.background = '#f5f5f5';
+        else ship.style.background = '#8d6e63';
 
         ui.style.display = 'flex';
         isFlying = true;
@@ -91,32 +152,29 @@
     }
 
     function deploy(type) {
-        if (type === 'balloon') {
-            const b = document.createElement('div'); b.className = 'balloon';
-            const t = document.createElement('div'); t.className = 'tether';
-            ship.appendChild(t); ship.appendChild(b);
-            lift += 0.15; speed *= 0.85;
-        } else {
-            const k = document.createElement('div'); k.className = 'kite';
-            const kt = document.createElement('div'); kt.className = 'kite-tether';
-            ship.appendChild(kt); ship.appendChild(k);
-            speed += 1.5; lift -= 0.05;
-        }
+        const gear = document.createElement('div');
+        gear.className = type;
+        ship.appendChild(gear);
+        if(type === 'kite') speed += 1.5; else lift += 0.2;
+    }
+
+    function unfurlBanner() {
+        banner.classList.add('unfurled');
     }
 
     function signalReturn() {
         speed = -2.5;
+        banner.classList.remove('unfurled');
         const msg = ["I", "MISS", "YOU"];
         msg.forEach((word, i) => {
             setTimeout(() => {
                 const s = document.createElement('div');
                 s.className = 'smoke';
                 s.innerText = word;
-                s.style.left = (x + 20) + 'px';
-                s.style.bottom = (y + 40) + 'px';
-                s.style.color = (i === 1) ? '#ff80ab' : '#9e9e9e'; // Pink for 'MISS', Grey for others
+                s.style.left = (x + 30) + 'px';
+                s.style.bottom = (y + 50) + 'px';
+                s.style.color = (i === 1) ? '#ff80ab' : '#9e9e9e'; 
                 document.getElementById('world').appendChild(s);
-                setTimeout(() => s.remove(), 6000);
             }, i * 800);
         });
     }
@@ -127,17 +185,22 @@
         y += (vy + lift);
         x += speed;
 
-        if (y < 0) { y = 0; vy = 0; }
+        // Ground collision (prevent falling below the distant horizon line)
+        if (y < startY - 20) { y = startY - 20; vy = 0; }
         
         ship.style.left = x + 'px';
         ship.style.bottom = y + 'px';
-        ship.style.transform = `rotate(${-vy * 3}deg) scaleX(${speed < 0 ? -1 : 1})`;
+        
+        // Tilt and orientation check
+        let rotation = -vy * 3;
+        let scale = speed < 0 ? -1 : 1;
+        ship.style.transform = `rotate(${rotation}deg) scaleX(${scale})`;
 
-        // Re-docking at the tower
-        if (speed < 0 && x <= 50) {
-            speed = 0;
-            y = 205;
-            vy = 0;
+        // Re-docking logic back to the tower height
+        if (speed < 0 && x <= startX) { 
+            speed = 0; y = startY; vy = 0;
+            isFlying = false;
+            ui.style.display = 'none';
         }
         requestAnimationFrame(flightLoop);
     }

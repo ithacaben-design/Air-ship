@@ -1,227 +1,416 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Airship Afternoon</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <title>The 46 Peaks Aviator</title>
+    <!-- Import fonts for the tactile feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        
-        body, html { 
-            height: 100%; width: 100%; overflow: hidden; 
-            background-color: #1a1c1a; 
-            font-family: 'Lora', serif; 
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            background-color: #87ceeb; /* Base sky color */
+            font-family: 'Lora', serif;
         }
 
         #game-container {
             position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #000;
-        }
-
-        /* The 300-second Slow Drift Background */
-        .sky-parallax {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
-            z-index: 1;
         }
 
-        .scroller {
-            display: flex;
-            width: 200%;
-            height: 100%;
-            animation: slow-drift 300s linear infinite;
-        }
-
-        .scroller img {
-            width: 50%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .mirrored { transform: scaleX(-1); }
-
-        @keyframes slow-drift {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
-
-        canvas {
+        /* --- THE SUMMIT PIN UI --- */
+        #summit-pin {
             position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 5;
-            pointer-events: none; /* Let clicks pass to UI if needed, or handle in JS */
-        }
-
-        /* UI OVERLAYS */
-        #ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: -150px; /* Starts hidden off-screen */
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 10;
-            pointer-events: none;
-        }
-
-        .screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            pointer-events: auto;
-            color: #f4efeb;
-            text-align: center;
-        }
-
-        .hidden { display: none; }
-
-        h1 { font-family: 'Caveat', cursive; font-size: clamp(3rem, 10vw, 5rem); color: #fdf5e6; }
-        
-        .btn {
-            background: #8c7a6b;
-            border: 2px solid #5c4b3a;
-            color: #f4efeb;
-            padding: 12px 35px;
-            font-size: 1.2rem;
-            font-family: 'Lora', serif;
-            border-radius: 25px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        #hud {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            padding: 0 30px;
             display: flex;
-            justify-content: space-between;
-            color: white;
-            font-family: 'Caveat', cursive;
-            font-size: 1.8rem;
-            pointer-events: none;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            flex-direction: column;
+            align-items: center;
+            transition: top 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        #summit-pin.show-pin { top: 0; }
+        .pin-string { width: 2px; height: 50px; background-color: #d4af37; }
+        .pin-tag {
+            background-color: #f4ebd0; 
+            padding: 10px 30px; border-radius: 5px;
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.3);
+            border: 1px solid #d1c09f; text-align: center;
+        }
+        .handwritten-text { font-family: 'Caveat', cursive; color: #2c2c2c; margin: 0; }
+        #mountain-name { font-size: 28px; letter-spacing: 1px; }
+        #mountain-elevation { font-size: 20px; color: #5a5a5a; }
+
+        /* --- PARALLAX SECRETS --- */
+        .parallax-secret {
+            position: absolute; width: 60px; height: 60px;
+            background-size: cover; cursor: pointer; transition: transform 0.2s;
+        }
+        .secret-hiker { background-image: url('hiker.png'); background-color: rgba(255,0,0,0.5); /* Placeholder */ }
+        .secret-wildlife { background-image: url('wildlife-bear.png'); background-color: rgba(139,69,19,0.5); /* Placeholder */ }
+        .camera-flash {
+            position: absolute; top: -10px; left: 20px; width: 30px; height: 30px;
+            background-color: white; border-radius: 50%; opacity: 0;
+            animation: flash-anim 0.3s ease-out;
+        }
+        @keyframes flash-anim {
+            0% { opacity: 1; transform: scale(0.5); }
+            100% { opacity: 0; transform: scale(2.5); }
+        }
+
+        /* --- COLLECTIBLES --- */
+        .collectible { position: absolute; width: 40px; height: 40px; background-size: cover; z-index: 4; }
+        .golden-acorn { 
+            background-image: url('acorn.png'); background-color: gold; border-radius: 50%; /* Placeholder */
+            animation: gentle-spin 4s linear infinite; 
+        }
+        .bird-note { 
+            background-image: url('sheet-music.png'); background-color: white; /* Placeholder */
+            animation: float-bob 2s ease-in-out infinite; 
+        }
+        @keyframes gentle-spin { 100% { transform: rotate(360deg); } }
+        @keyframes float-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* --- THE BIRDSONG BANNER & SHIP --- */
+        .action-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        #player-ship { position: absolute; width: 120px; height: 80px; pointer-events: auto; }
+        #ship-image { width: 100%; position: relative; z-index: 5; }
+        
+        #birdsong-banner {
+            position: absolute; right: 100px; top: 50%;
+            display: flex; align-items: center; flex-direction: row-reverse;
+        }
+        #golden-twine { position: absolute; right: 0; height: 2px; background-color: #d4af37; width: 0px; transition: width 0.3s ease-out; z-index: 1; }
+        #notes-container { display: flex; flex-direction: row-reverse; z-index: 2; }
+        .caught-note {
+            width: 25px; height: 25px; background-image: url('sheet-music.png'); background-color: white;
+            margin-right: 15px; animation: pop-onto-twine 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes pop-onto-twine {
+            0% { transform: scale(0) translateY(-20px) rotate(-20deg); opacity: 0; }
+            100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+        }
+
+        /* --- ULTIMATE ABILITY --- */
+        .ultimate-ready { filter: drop-shadow(0 0 15px #d4af37); animation: pulse-glow 1s infinite alternate; cursor: pointer; }
+        @keyframes pulse-glow { from { filter: drop-shadow(0 0 10px #d4af37); } to { filter: drop-shadow(0 0 30px #ffdf00); } }
+        .shockwave-effect {
+            position: absolute; top: 50%; left: 50%; width: 0px; height: 0px;
+            border: 8px solid rgba(255, 255, 255, 0.8); border-radius: 50%;
+            transform: translate(-50%, -50%); pointer-events: none; z-index: 20;
+            animation: detonate 1s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        }
+        @keyframes detonate { 100% { width: 250vw; height: 250vw; opacity: 0; border-width: 0px; } }
+        .shake-screen { animation: camera-shake 0.4s ease-in-out; }
+        @keyframes camera-shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-10px, 5px); }
+            40% { transform: translate(10px, -5px); }
+            60% { transform: translate(-10px, -5px); }
+            80% { transform: translate(10px, 5px); }
         }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <!-- Parallax Background Layer -->
-    <div class="sky-parallax">
-        <div class="scroller">
-            <img src="background.jpg" alt="Mountains">
-            <img src="background.jpg" class="mirrored" alt="Mountains">
-        </div>
+    <!-- THE AMBIENT AUDIO ENGINE -->
+    <div id="audio-engine" style="display: none;">
+        <audio id="sfx-acorn" src="wooden-clack.mp3" preload="auto"></audio>
+        <audio id="sfx-twine" src="twine-snap.mp3" preload="auto"></audio>
+        <audio id="sfx-wind" src="mountain-howl.mp3" loop preload="auto"></audio>
+        <audio id="sfx-leaf" src="paper-thwack.mp3" preload="auto"></audio>
+        <audio id="sfx-camera" src="vintage-shutter.mp3" preload="auto"></audio>
+        <audio id="sfx-chime" src="song-complete.mp3" preload="auto"></audio>
     </div>
 
-    <!-- Gameplay Layer -->
-    <canvas id="gameCanvas"></canvas>
+    <!-- THE GAME CONTAINER -->
+    <div id="game-container">
+        
+        <!-- Deep Parallax Layers (CSS Backgrounds would go here) -->
+        
+        <!-- Midground: Parallax Secrets Layer -->
+        <div id="secrets-layer" style="position: absolute; width: 100%; height: 100%; z-index: 3;"></div>
+        
+        <!-- Foreground: Collectibles Layer -->
+        <div id="collectibles-layer" style="position: absolute; width: 100%; height: 100%; z-index: 4;"></div>
 
-    <!-- UI Layer -->
-    <div id="ui-layer">
-        <div id="hud" class="hidden">
-            <div>SCORE: <span id="score">0</span></div>
-            <div>PILOT: <span id="pilotName">Captain</span></div>
+        <!-- Action Layer: Player Ship -->
+        <div class="action-layer">
+            <div id="player-ship">
+                <!-- Temporary placeholder if image is missing -->
+                <div id="ship-image" style="width: 120px; height: 60px; background: #c25c3a; border-radius: 60px 60px 20px 20px;"></div>
+                
+                <!-- The Trailing Birdsong Banner -->
+                <div id="birdsong-banner">
+                    <div id="golden-twine"></div>
+                    <div id="notes-container"></div>
+                </div>
+            </div>
         </div>
 
-        <div id="start-screen" class="screen">
-            <h1>Airship Afternoon</h1>
-            <input type="text" id="nameInput" placeholder="Enter Pilot Name" style="padding: 10px; border-radius: 5px; border: none; font-size: 1.2rem; width: 250px;">
-            <button class="btn" onclick="startGame()">Untie & Launch</button>
+        <!-- Diegetic UI: Summit Pin -->
+        <div id="summit-pin" class="hidden-pin">
+            <div class="pin-string"></div>
+            <div class="pin-tag">
+                <h2 id="mountain-name" class="handwritten-text">Mount Marcy</h2>
+                <p id="mountain-elevation" class="handwritten-text">5,344'</p>
+            </div>
         </div>
+
     </div>
-</div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let shipImg = new Image();
-    shipImg.src = 'airship.jpg'; // Using the black background version
+    <script>
+        // --- 1. DOM ELEMENTS & AUDIO ENGINE ---
+        const gameContainer = document.getElementById('game-container');
+        const ship = document.getElementById('player-ship');
+        const secretsLayer = document.getElementById('secrets-layer');
+        const collectiblesLayer = document.getElementById('collectibles-layer');
+        const twine = document.getElementById('golden-twine');
+        const notesContainer = document.getElementById('notes-container');
 
-    let gameState = 'menu';
-    let player = {
-        x: 100,
-        y: 200,
-        vy: 0,
-        width: 120, // "Half-dollar" relative size
-        height: 80,
-        gravity: 0.15,
-        lift: -0.4,
-        isLifting: false
-    };
-
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        // Adjust ship size based on screen
-        player.width = Math.min(canvas.width * 0.15, 120);
-        player.height = player.width * 0.66;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    function startGame() {
-        const name = document.getElementById('nameInput').value;
-        document.getElementById('pilotName').innerText = name || "Captain";
-        document.getElementById('start-screen').classList.add('hidden');
-        document.getElementById('hud').classList.remove('hidden');
-        gameState = 'play';
-        requestAnimationFrame(update);
-    }
-
-    // Input Handling
-    window.addEventListener('mousedown', () => player.isLifting = true);
-    window.addEventListener('mouseup', () => player.isLifting = false);
-    window.addEventListener('touchstart', (e) => { e.preventDefault(); player.isLifting = true; });
-    window.addEventListener('touchend', () => player.isLifting = false);
-
-    function update() {
-        if (gameState !== 'play') return;
-
-        // Physics
-        if (player.isLifting) {
-            player.vy += player.lift;
-        } else {
-            player.vy += player.gravity;
+        function playAudio(soundId) {
+            const sound = document.getElementById(soundId);
+            if (sound) {
+                sound.currentTime = 0; 
+                sound.play().catch(error => console.log("Audio requires interaction first."));
+            }
         }
-        player.y += player.vy;
-        player.vy *= 0.98; // Friction
 
-        // Bounds
-        if (player.y < 0) { player.y = 0; player.vy = 0; }
-        if (player.y > canvas.height - player.height) { player.y = canvas.height - player.height; player.vy = 0; }
+        function toggleWindAudio(isBlowing) {
+            const windAudio = document.getElementById('sfx-wind');
+            if (!windAudio) return;
+            if (isBlowing) {
+                windAudio.volume = 0.8;
+                windAudio.play().catch(e => {});
+            } else {
+                let fadeOut = setInterval(() => {
+                    if (windAudio.volume > 0.1) windAudio.volume -= 0.1;
+                    else { windAudio.pause(); clearInterval(fadeOut); }
+                }, 100);
+            }
+        }
 
-        draw();
-        requestAnimationFrame(update);
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Drawing the Airship with "Black-Key" transparency trick
-        // We use globalCompositeOperation to 'screen' or use a custom filter
-        ctx.save();
+        // --- 2. GAME PHYSICS & STATE VARIABLES ---
+        let isLifting = false;
+        let shipY = window.innerHeight * 0.4; 
+        let shipX = 50; // Starting 50px from left
+        const gravity = 1.5; 
+        const liftForce = 3.5; 
+        const maxAltitude = 20; // Ceiling limit
+        const groundLevel = window.innerHeight - 100; // Floor limit
         
-        // This filter attempts to make strictly black pixels transparent in real-time
-        // If your ship art is too dark, we can remove this and use a proper PNG
-        ctx.globalCompositeOperation = 'screen'; 
+        let isWindy = false;
+        let windForce = 0;
         
-        // Draw Squirrel Pilot & Woodpecker Ship
-        ctx.drawImage(shipImg, player.x, player.y, player.width, player.height);
-        
-        ctx.restore();
-    }
+        let touchStartX = 0;
+        let touchEndX = 0;
 
-</script>
+        let collectiblesList = [];
+        let secretsList = [];
+        let notesCaught = 0;
+        const songLength = 7;
+        let ultimateIsReady = false;
+
+        // --- 3. EVENT LISTENERS (INPUTS) ---
+        gameContainer.addEventListener('touchstart', (e) => {
+            isLifting = true;
+            touchStartX = e.changedTouches.screenX; 
+        });
+
+        gameContainer.addEventListener('touchend', (e) => {
+            isLifting = false;
+            touchEndX = e.changedTouches.screenX; 
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeDistance = touchEndX - touchStartX;
+            if (swipeDistance > 50) triggerSpeedBoost();
+        }
+
+        function triggerSpeedBoost() {
+            shipX += 80; // Dash forward
+            if (shipX > window.innerWidth * 0.8) shipX = window.innerWidth * 0.8;
+            playAudio('sfx-twine');
+        }
+
+        // --- 4. GAME MECHANICS TRIGGERS ---
+        function triggerMountainGust() {
+            isWindy = true; windForce = 1.5; 
+            toggleWindAudio(true);
+            setTimeout(() => {
+                isWindy = false; windForce = 0;
+                toggleWindAudio(false); 
+            }, 5000);
+        }
+
+        function dropSummitPin(name, elevation) {
+            const pin = document.getElementById('summit-pin');
+            document.getElementById('mountain-name').innerText = name;
+            document.getElementById('mountain-elevation').innerText = elevation;
+            pin.classList.add('show-pin');
+            setTimeout(() => pin.classList.remove('show-pin'), 4000);
+        }
+
+        // --- 5. ULTIMATE ABILITY LOGIC ---
+        ship.addEventListener('touchstart', (e) => {
+            if (ultimateIsReady) {
+                e.stopPropagation(); // Prevent lifting
+                unleashBlueJayShockwave();
+            }
+        });
+
+        function unleashBlueJayShockwave() {
+            ultimateIsReady = false;
+            ship.classList.remove('ultimate-ready');
+            notesCaught = 0;
+            notesContainer.innerHTML = ''; 
+            twine.style.width = '0px'; 
+            
+            const shockwave = document.createElement('div');
+            shockwave.className = 'shockwave-effect';
+            ship.appendChild(shockwave); 
+            setTimeout(() => shockwave.remove(), 1000); 
+            
+            gameContainer.classList.add('shake-screen');
+            setTimeout(() => gameContainer.classList.remove('shake-screen'), 400);
+
+            if (isWindy) {
+                isWindy = false; windForce = 0;
+                toggleWindAudio(false); 
+            }
+        }
+
+        // --- 6. SPAWNING LOGIC (SECRETS & COLLECTIBLES) ---
+        function spawnSecret() {
+            const secret = document.createElement('div');
+            const isHiker = Math.random() > 0.5; 
+            secret.className = isHiker ? 'parallax-secret secret-hiker' : 'parallax-secret secret-wildlife';
+            secret.style.left = window.innerWidth + 'px';
+            secret.style.top = (window.innerHeight * 0.55) + 'px'; 
+            
+            secret.addEventListener('touchstart', (e) => {
+                e.stopPropagation(); 
+                if (isHiker) {
+                    const flash = document.createElement('div');
+                    flash.className = 'camera-flash';
+                    secret.appendChild(flash);
+                    playAudio('sfx-camera');
+                } else {
+                    secret.style.transform = "translateY(-15px)";
+                    setTimeout(() => secret.style.transform = "translateY(0)", 200);
+                }
+                secret.style.pointerEvents = 'none'; 
+            });
+            
+            secretsLayer.appendChild(secret);
+            secretsList.push({ element: secret });
+        }
+
+        function spawnCollectible() {
+            const item = document.createElement('div');
+            const isNote = Math.random() > 0.8; 
+            item.className = isNote ? 'collectible bird-note' : 'collectible golden-acorn';
+            item.style.left = window.innerWidth + 'px';
+            item.style.top = (Math.random() * (window.innerHeight * 0.6) + 100) + 'px';
+            
+            collectiblesLayer.appendChild(item);
+            collectiblesList.push({ element: item, isNote: isNote });
+        }
+
+        setInterval(spawnCollectible, 2500);
+        setInterval(spawnSecret, 10000);
+
+        function checkCollision(rect1, rect2) {
+            return (
+                rect1.left < rect2.right && rect1.right > rect2.left &&
+                rect1.top < rect2.bottom && rect1.bottom > rect2.top
+            );
+        }
+
+        // --- 7. THE MAIN GAME LOOP ---
+        function gameLoop() {
+            // Y-Axis Physics
+            if (isLifting) shipY -= liftForce; 
+            else shipY += gravity; 
+            if (shipY < maxAltitude) shipY = maxAltitude;
+            if (shipY > groundLevel) shipY = groundLevel;
+
+            // X-Axis Physics (Wind Pushback)
+            if (isWindy) {
+                shipX -= windForce; 
+                if (shipX < -50) shipX = -50; 
+            } else {
+                if (shipX > 50) shipX -= 0.5; 
+                else if (shipX < 50) shipX += 0.5; 
+            }
+
+            ship.style.transform = `translate(${shipX}px, ${shipY}px)`;
+            const shipRect = ship.getBoundingClientRect();
+
+            // Parallax Secrets Movement
+            for (let i = secretsList.length - 1; i >= 0; i--) {
+                let el = secretsList[i].element;
+                let currentLeft = parseFloat(el.style.left) || window.innerWidth;
+                currentLeft -= 1.5; 
+                el.style.left = currentLeft + 'px';
+                if (currentLeft < -100) { el.remove(); secretsList.splice(i, 1); }
+            }
+
+            // Collectibles Movement & Collision
+            for (let i = collectiblesList.length - 1; i >= 0; i--) {
+                let itemObj = collectiblesList[i];
+                let el = itemObj.element;
+                let currentLeft = parseFloat(el.style.left) || window.innerWidth;
+                currentLeft -= 3; 
+                el.style.left = currentLeft + 'px';
+
+                const itemRect = el.getBoundingClientRect();
+                
+                // Collision check
+                if (checkCollision(shipRect, itemRect)) {
+                    if (itemObj.isNote) {
+                        if (notesCaught < songLength && !ultimateIsReady) {
+                            notesCaught++;
+                            const newNote = document.createElement('div');
+                            newNote.className = 'caught-note';
+                            notesContainer.appendChild(newNote);
+                            twine.style.width = (notesCaught * 40) + 'px';
+                            
+                            if (notesCaught === songLength) {
+                                ultimateIsReady = true;
+                                ship.classList.add('ultimate-ready');
+                                playAudio('sfx-chime');
+                            }
+                        }
+                    } else {
+                        playAudio('sfx-acorn'); 
+                    }
+                    el.remove();
+                    collectiblesList.splice(i, 1);
+                } 
+                else if (currentLeft < -50) {
+                    el.remove();
+                    collectiblesList.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- 8. START ENGINE ---
+        gameLoop();
+
+        // Testing Triggers (Remove before launch)
+        setTimeout(() => dropSummitPin("Mount Marcy", "5,344'"), 2000); 
+        setTimeout(triggerMountainGust, 5000); 
+
+    </script>
 </body>
 </html>
-
+```

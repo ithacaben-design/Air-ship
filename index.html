@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -219,12 +218,12 @@
         // --- 3. EVENT LISTENERS (INPUTS) ---
         gameContainer.addEventListener('touchstart', (e) => {
             isLifting = true;
-            touchStartX = e.changedTouches.screenX; 
+            touchStartX = e.changedTouches[0].screenX; 
         });
 
         gameContainer.addEventListener('touchend', (e) => {
             isLifting = false;
-            touchEndX = e.changedTouches.screenX; 
+            touchEndX = e.changedTouches[0].screenX; 
             handleSwipe();
         });
 
@@ -413,4 +412,3 @@
     </script>
 </body>
 </html>
-```

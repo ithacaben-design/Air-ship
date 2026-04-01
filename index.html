@@ -6,272 +6,46 @@
     <title>The 46 Peaks Aviator</title>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-        /* CORE LAYOUT */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-
-        body, html {
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background-color: #3e4a3d; /* Cool shade */
-            font-family: 'Lora', serif; /* Linen-esque readable font */
-        }
-
-        #game-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #e8dcc8; /* Warm afternoon linen fallback */
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        body, html { height: 100%; width: 100%; overflow: hidden; background-color: #3e4a3d; font-family: 'Lora', serif; }
+        #game-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #e8dcc8; }
         #vibe-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 2;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2;
             background: radial-gradient(circle at 70% 30%, rgba(255, 215, 120, 0.25) 0%, rgba(50, 70, 50, 0.4) 100%);
-            mix-blend-mode: hard-light;
-            transition: background 2s ease;
+            mix-blend-mode: hard-light; transition: background 2s ease;
         }
+        canvas { display: block; width: 100%; height: 100%; filter: sepia(0.15) contrast(1.05) brightness(1.05); }
+        
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; z-index: 10; }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(45, 55, 45, 0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; color: #f4efeb; text-align: center; transition: opacity 0.5s ease-in-out; z-index: 20; }
+        .hidden { opacity: 0; pointer-events: none; }
+        
+        h1 { font-family: 'Caveat', cursive; font-size: clamp(2rem, 8vw, 4.5rem); margin-bottom: 5px; color: #fdf5e6; text-shadow: 2px 2px 8px rgba(0,0,0,0.4); letter-spacing: 2px; }
+        .setup-panel { background: rgba(244, 239, 235, 0.95); padding: 15px 20px; border: 2px solid #8c7a6b; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 10px; pointer-events: auto; color: #4a3e35; }
+        .input-group { display: flex; flex-direction: column; text-align: left; }
+        .input-group label { font-family: 'Caveat', cursive; font-size: 1.3rem; color: #5c4b3a; margin-bottom: 2px; }
+        .input-group input { background: #fdfaf6; border: 1px solid #b8a99a; color: #4a3e35; padding: 8px; font-size: 1rem; border-radius: 5px; font-family: 'Lora', serif; text-align: center; }
+        .input-group input:focus { outline: none; box-shadow: 0 0 8px rgba(140, 122, 107, 0.6); border-color: #8c7a6b; }
+        .btn { background: #8c7a6b; border: 2px solid #5c4b3a; color: #f4efeb; padding: 10px 25px; font-size: 1.1rem; font-family: 'Lora', serif; font-weight: bold; border-radius: 25px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3); pointer-events: auto; }
+        .btn:hover { background: #5c4b3a; transform: translateY(-2px); }
+        .btn:active { transform: translateY(2px); }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            filter: sepia(0.15) contrast(1.05) brightness(1.05); /* Sunwarmed skin aesthetic */
-        }
-
-        /* UI OVERLAYS */
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; 
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            z-index: 10;
-        }
-
-        .screen {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(45, 55, 45, 0.5); /* Cool shade overlay */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            pointer-events: auto;
-            color: #f4efeb; /* Linen white */
-            text-align: center;
-            transition: opacity 0.5s ease-in-out;
-            z-index: 20;
-        }
-
-        .hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        h1 {
-            font-family: 'Caveat', cursive; /* Script font */
-            font-size: clamp(2rem, 8vw, 4.5rem); /* Scaled down */
-            margin-bottom: 5px;
-            color: #fdf5e6;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.4);
-            letter-spacing: 2px;
-        }
-
-        .setup-panel {
-            background: rgba(244, 239, 235, 0.95); /* Linen */
-            padding: 15px 20px; /* Scaled down */
-            border: 2px solid #8c7a6b; /* Mushroom brown */
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            gap: 10px; /* Scaled down */
-            pointer-events: auto;
-            color: #4a3e35;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            text-align: left;
-        }
-
-        .input-group label {
-            font-family: 'Caveat', cursive;
-            font-size: 1.3rem; /* Scaled down */
-            color: #5c4b3a;
-            margin-bottom: 2px;
-        }
-
-        .input-group input {
-            background: #fdfaf6;
-            border: 1px solid #b8a99a;
-            color: #4a3e35;
-            padding: 8px; /* Scaled down */
-            font-size: 1rem; /* Scaled down */
-            border-radius: 5px;
-            font-family: 'Lora', serif;
-            text-align: center;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            box-shadow: 0 0 8px rgba(140, 122, 107, 0.6);
-            border-color: #8c7a6b;
-        }
-
-        .btn {
-            background: #8c7a6b; /* Mushroom */
-            border: 2px solid #5c4b3a;
-            color: #f4efeb;
-            padding: 10px 25px; /* Scaled down */
-            font-size: 1.1rem; /* Scaled down */
-            font-family: 'Lora', serif;
-            font-weight: bold;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            pointer-events: auto;
-        }
-
-        .btn:hover {
-            background: #5c4b3a;
-            transform: translateY(-2px);
-        }
-
-        .btn:active {
-            transform: translateY(2px);
-        }
-
-        /* HUD */
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px 15px; /* Scaled down */
-            background: linear-gradient(to bottom, rgba(30, 40, 30, 0.8), transparent);
-            color: #fdf5e6;
-            font-size: 0.9rem; /* Scaled down */
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            pointer-events: none;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
-        }
-
-        #bottom-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 10px 20px 15px; /* Scaled down */
-            background: linear-gradient(to top, rgba(30, 40, 30, 0.9), transparent);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            pointer-events: none;
-            z-index: 5;
-        }
-
+        #hud { position: absolute; top: 0; left: 0; width: 100%; padding: 10px 15px; background: linear-gradient(to bottom, rgba(30, 40, 30, 0.8), transparent); color: #fdf5e6; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); }
+        #bottom-bar { position: absolute; bottom: 0; left: 0; width: 100%; padding: 10px 20px 15px; background: linear-gradient(to top, rgba(30, 40, 30, 0.9), transparent); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; pointer-events: none; z-index: 5; }
+        
         .acorn-text { color: #ffd700; font-weight: bold; text-shadow: 0px 0px 5px rgba(255, 200, 0, 0.5); }
-        .status-warn { color: #e9c46a !important; }
-        .status-crit { color: #e76f51 !important; }
-
-        /* ACTION BUTTONS */
-        .action-btn {
-            flex: 1; 
-            padding: 10px 0; /* Scaled down */
-            font-size: 1.6rem; /* Scaled down */
-            background: rgba(244, 239, 235, 0.95);
-            color: #000;
-            border: 2px solid #8c7a6b;
-            border-radius: 10px; /* Scaled down */
-            cursor: pointer;
-            pointer-events: auto;
-            transition: all 0.3s ease;
-            box-shadow: 2px 4px 0px rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
         
-        .action-btn:active:not(.on-cooldown):not(.no-acorns) {
-            transform: translateY(2px);
-            box-shadow: 0px 2px 0px rgba(0,0,0,0.3);
-            background: #d4c7b8;
-        }
+        .action-btn { flex: 1; padding: 10px 0; font-size: 1.6rem; background: rgba(244, 239, 235, 0.95); color: #000; border: 2px solid #8c7a6b; border-radius: 10px; cursor: pointer; pointer-events: auto; transition: all 0.3s ease; box-shadow: 2px 4px 0px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; position: relative; }
+        .action-btn:active:not(.on-cooldown):not(.no-acorns) { transform: translateY(2px); box-shadow: 0px 2px 0px rgba(0,0,0,0.3); background: #d4c7b8; }
         
-        /* Cooldown & No Fuel States */
-        .on-cooldown {
-            opacity: 0.5;
-            pointer-events: none !important;
-            transform: scale(0.95);
-        }
-        .no-acorns {
-            opacity: 0.3;
-            filter: grayscale(100%);
-            pointer-events: none !important;
-        }
+        .on-cooldown { opacity: 0.5; pointer-events: none !important; transform: scale(0.95); }
+        .no-acorns { opacity: 0.3; filter: grayscale(100%); pointer-events: none !important; }
+        .cost-label { position: absolute; bottom: -8px; font-size: 0.65rem; font-family: 'Lora', serif; color: #d4a373; background: #fff; padding: 1px 4px; border-radius: 8px; border: 1px solid #8c7a6b; font-weight: bold; }
 
-        .cost-label {
-            position: absolute;
-            bottom: -8px; /* Adjusted for smaller button */
-            font-size: 0.65rem; /* Scaled down */
-            font-family: 'Lora', serif;
-            color: #d4a373;
-            background: #fff;
-            padding: 1px 4px; /* Scaled down */
-            border-radius: 8px;
-            border: 1px solid #8c7a6b;
-            font-weight: bold;
-        }
+        #song-btn.available:not(.on-cooldown):not(.no-acorns) { background: rgba(255, 240, 200, 0.9); animation: pulseBanner 2s infinite alternate; border-color: #d4a373; }
+        @keyframes pulseBanner { from { box-shadow: 0 0 5px rgba(212, 163, 115, 0.4); transform: scale(1); } to { box-shadow: 0 0 15px rgba(212, 163, 115, 0.8); transform: scale(1.05); } }
 
-        #song-btn.available:not(.on-cooldown):not(.no-acorns) {
-            background: rgba(255, 240, 200, 0.9);
-            animation: pulseBanner 2s infinite alternate;
-            border-color: #d4a373;
-        }
-
-        @keyframes pulseBanner {
-            from { box-shadow: 0 0 5px rgba(212, 163, 115, 0.4); transform: scale(1); }
-            to { box-shadow: 0 0 15px rgba(212, 163, 115, 0.8); transform: scale(1.05); }
-        }
-
-        /* MOBILE CONTROLS HINT */
-        #controls-hint {
-            position: absolute;
-            bottom: 85px; /* Scaled down */
-            width: 100%;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.8);
-            font-family: 'Caveat', cursive;
-            font-size: 1.1rem; /* Scaled down */
-            letter-spacing: 1px;
-            pointer-events: none;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-        }
+        #controls-hint { position: absolute; bottom: 85px; width: 100%; text-align: center; color: rgba(255, 255, 255, 0.8); font-family: 'Caveat', cursive; font-size: 1.1rem; letter-spacing: 1px; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
@@ -286,10 +60,9 @@
                     <div style="font-size: 1.1rem;">ACORNS: <span id="acornDisplay" class="acorn-text">50</span> 🌰</div>
                     <div style="font-size: 1.2rem; color: #e8dcc8; font-family: 'Caveat', cursive;">PILOT: <span id="pilotDisplay" style="color:#fdf5e6;">___</span></div>
                 </div>
-                
                 <div style="display:flex; flex-direction:column; align-items:flex-end;">
                     <div>ALTITUDE: <span id="altDisplay">1200</span> FT</div>
-                    <div style="font-size:0.7rem; margin-top:3px; color:#e8dcc8;">INTEGRITY: <span id="integrityDisplay">100%</span></div>
+                    <div style="font-size:0.7rem; margin-top:3px; color:#e8dcc8;">INTEGRITY: 100%</div>
                 </div>
             </div>
 
@@ -303,7 +76,6 @@
 
             <div id="start-screen" class="screen">
                 <h1>46 Peaks Aviator</h1>
-                
                 <div class="setup-panel">
                     <div class="input-group">
                         <label>Enter Pilot Name:</label>
@@ -314,7 +86,6 @@
                         <input type="text" id="setup-fruit" placeholder="Strawberry" maxlength="15">
                     </div>
                 </div>
-
                 <p style="font-family: 'Caveat', cursive; font-size: 1.4rem; margin-bottom: 15px;">Tap Top to Lift • Tap Bottom to Drop</p>
                 <button class="btn" id="start-btn">Untie & Launch</button>
             </div>
@@ -337,46 +108,41 @@
             const controlsHint = document.getElementById('controls-hint');
             const acornDisplay = document.getElementById('acornDisplay');
             const altDisplay = document.getElementById('altDisplay');
-            const integrityDisplay = document.getElementById('integrityDisplay');
             const pilotDisplay = document.getElementById('pilotDisplay');
             const startBtn = document.getElementById('start-btn');
             const songBtn = document.getElementById('song-btn');
-            
-            // Inputs
             const addBalloonBtn = document.getElementById('add-balloon-btn');
             const addKiteBtn = document.getElementById('add-kite-btn');
             const setupNameInput = document.getElementById('setup-name');
             const setupFruitInput = document.getElementById('setup-fruit');
             const vibeOverlay = document.getElementById('vibe-overlay');
 
-            // Game Assets (BULLETPROOF LOADING)
-            let shipLoaded = false;
-            const shipImg = new Image();
-            shipImg.onload = () => { shipLoaded = true; };
-            shipImg.onerror = () => { shipLoaded = false; };
-            shipImg.src = 'airship.jpg'; 
-            
-            let bgLoaded = false;
-            const bgImg = new Image();
-            bgImg.onload = () => { bgLoaded = true; };
-            bgImg.onerror = () => { bgLoaded = false; };
-            bgImg.src = 'background.jpg';
+            // --- GAME ASSETS (BULLETPROOF LOADING) ---
+            const loadImage = (src) => {
+                const img = new Image();
+                let isLoaded = false;
+                img.onload = () => { isLoaded = true; };
+                img.onerror = () => { isLoaded = false; };
+                img.src = src;
+                return { img, get isLoaded() { return isLoaded; } };
+            };
+
+            const shipObj = loadImage('airship.png'); // Falls back to generic render if missing
+            const loop2Obj = loadImage('loop2.png');
+            const loop3Obj = loadImage('loop3.png');
+            const loop4Obj = loadImage('loop4.png');
+            const loop5Obj = loadImage('loop5.png'); // Menu Background
+            const loop6Obj = loadImage('loop6.png');
+            const loop7Obj = loadImage('loop7.png');
+            const nightBgObj = loadImage('paralax9.PNG');
 
             // Fruit to Emoji Dictionary
             const fruitMap = {
-                'apple': '🍎', 'red apple': '🍎', 'green apple': '🍏',
-                'banana': '🍌', 'bananas': '🍌',
-                'grape': '🍇', 'grapes': '🍇',
-                'orange': '🍊', 'tangerine': '🍊', 'mandarin': '🍊',
-                'watermelon': '🍉', 'melon': '🍈', 'cantaloupe': '🍈',
-                'strawberry': '🍓', 'strawberries': '🍓',
-                'cherry': '🍒', 'cherries': '🍒',
-                'peach': '🍑', 'pineapple': '🍍', 'kiwi': '🥝',
-                'lemon': '🍋', 'pear': '🍐',
-                'blueberry': '🫐', 'blueberries': '🫐',
-                'coconut': '🥥', 'mango': '🥭',
-                'tomato': '🍅', 'avocado': '🥑', 'plum': '🍑',
-                'blackberry': '🫐', 'raspberry': '🍓', 'lime': '🍋'
+                'apple': '🍎', 'red apple': '🍎', 'green apple': '🍏', 'banana': '🍌', 'bananas': '🍌',
+                'grape': '🍇', 'grapes': '🍇', 'orange': '🍊', 'tangerine': '🍊', 'mandarin': '🍊',
+                'watermelon': '🍉', 'melon': '🍈', 'cantaloupe': '🍈', 'strawberry': '🍓', 'strawberries': '🍓',
+                'cherry': '🍒', 'cherries': '🍒', 'peach': '🍑', 'pineapple': '🍍', 'kiwi': '🥝',
+                'lemon': '🍋', 'pear': '🍐', 'blueberry': '🫐', 'blueberries': '🫐', 'coconut': '🥥', 'mango': '🥭'
             };
 
             function getFruitEmoji(fruitName) {
@@ -386,7 +152,6 @@
 
             // Variables
             let currentFruitEmoji = '🎈';
-
             const STATE = { MENU: 0, PLAYING: 1 }; 
             let currentState = STATE.MENU;
 
@@ -425,65 +190,41 @@
                     this.x = Math.min(canvas.width * 0.3, 300); 
                     this.y = canvas.height / 2 - this.height / 2;
                     
-                    this.hitbox = {
-                        offsetX: this.width * 0.1, offsetY: this.height * 0.15,
-                        w: this.width * 0.8, h: this.height * 0.7
-                    };
-
+                    this.hitbox = { offsetX: this.width * 0.1, offsetY: this.height * 0.15, w: this.width * 0.8, h: this.height * 0.7 };
                     this.vy = 0;
                     this.vx = 0;
                     this.thrustY = -0.5;
                     this.thrustX = 0.06; 
                     this.drag = 0.96;
-                    
-                    this.notes = 0; // The Diegetic Banner Progress
+                    this.notes = 0; 
                     this.maxNotes = 3;
-
-                    this.kiteDamage = 0; 
                     this.customBalloons = []; 
                     this.kites = []; 
                 }
 
                 addBalloon(emojiChar) {
-                    this.customBalloons.push({
-                        emoji: emojiChar,
-                        tX: -20 - Math.random() * 80, 
-                        tY: -40 - Math.random() * 60,
-                        x: 0, y: 0,
-                        phase: Math.random() * Math.PI * 2
-                    });
-                    // Extra lift
+                    this.customBalloons.push({ emoji: emojiChar, tX: -20 - Math.random() * 80, tY: -40 - Math.random() * 60, x: 0, y: 0, phase: Math.random() * Math.PI * 2 });
                     this.thrustY = Math.max(-0.8, this.thrustY - 0.02);
                 }
 
                 addKite() {
                     const kiteTypes = ['diamond', 'airplane', 'crane'];
                     const kType = kiteTypes[this.kites.length % 3];
-                    this.kites.push({
-                        type: kType, tX: 0, tY: 0, x: this.width/2, y: 0,
-                        phase: Math.random() * Math.PI * 2 
-                    });
+                    this.kites.push({ type: kType, tX: 0, tY: 0, x: this.width/2, y: 0, phase: Math.random() * Math.PI * 2 });
                 }
 
                 update(isNight) {
                     let bannerDragX = this.notes > 0 ? -0.0125 - (this.notes * 0.0125) : -0.005; 
                     let origamiKiteThrust = this.kites.length * 0.01; 
 
-                    // THE DRIFT STATE, LIFT, AND DROP & ACORN CONSUMPTION
+                    // LIFT, DROP, DRIFT & ECONOMY
                     if (verticalThrust === -1 && acorns > 0) {
-                        // LIFTING UP
-                        this.vy += this.thrustY;
-                        this.vx += this.thrustX;
-                        acorns -= 0.1; 
+                        this.vy += this.thrustY; this.vx += this.thrustX; acorns -= 0.1; 
                         if (frames % 4 === 0) particles.push(new Particle(this.x + this.width*0.2, this.y + this.height*0.8));
                     } else if (verticalThrust === 1 && acorns > 0) {
-                        // DROPPING DOWN
-                        this.vy -= this.thrustY; 
-                        this.vx += this.thrustX;
-                        acorns -= 0.1; 
+                        this.vy -= this.thrustY; this.vx += this.thrustX; acorns -= 0.1; 
                         if (frames % 4 === 0) particles.push(new Particle(this.x + this.width*0.2, this.y + this.height*0.2));
                     } else {
-                        // DRIFT STATE: Gentle aimless bobbing returning toward center
                         verticalThrust = 0; 
                         let targetY = canvas.height / 2;
                         this.vy += (targetY - this.y) * 0.0005; 
@@ -491,44 +232,29 @@
                     }
                     
                     this.vx += bannerDragX + origamiKiteThrust;
-                    this.vy *= this.drag;
-                    this.vx *= this.drag;
-                    this.y += this.vy;
-                    this.x += this.vx;
+                    this.vy *= this.drag; this.vx *= this.drag;
+                    this.y += this.vy; this.x += this.vx;
 
                     // Bounds
                     let maxX = canvas.width * 0.6; 
                     if (this.x > maxX) { this.x = maxX; this.vx = 0; }
-                    // NO FAIL STATE: Pin gently to the back of the screen instead of dying
-                    if (this.x < 10) { this.x = 10; this.vx = 0; }
-
-                    // Gentle Ceiling/Floor Bumping
+                    if (this.x < 10) { this.x = 10; this.vx = 0; } // No fail state
                     if (this.y < 0) { this.y = 0; this.vy = Math.abs(this.vy) * 0.5; }
                     if (this.y + this.height > canvas.height) { this.y = canvas.height - this.height; this.vy = -Math.abs(this.vy) * 0.5; }
 
-                    // Update attachments (Balloons & Kites)
+                    // Attachments
                     this.customBalloons.forEach(b => {
-                        let windPullX = -this.vx * 15; 
-                        let swayX = Math.sin(frames * 0.05 + b.phase) * 10;
-                        let swayY = Math.cos(frames * 0.04 + b.phase) * 5;
-                        b.x += ((b.tX + windPullX + swayX) - b.x) * 0.1;
-                        b.y += ((b.tY + swayY) - b.y) * 0.1;
+                        let windPullX = -this.vx * 15; let swayX = Math.sin(frames * 0.05 + b.phase) * 10; let swayY = Math.cos(frames * 0.04 + b.phase) * 5;
+                        b.x += ((b.tX + windPullX + swayX) - b.x) * 0.1; b.y += ((b.tY + swayY) - b.y) * 0.1;
                     });
-                    
                     this.kites.forEach((k, index) => {
-                        k.tX = this.width/2 + 30 + (index * 45);
-                        k.tY = -this.height/2 - 20 - (index * 30);
-                        let windPullX = -this.vx * 3; 
-                        let swayX = Math.sin(frames * 0.06 + k.phase) * 12;
-                        let swayY = Math.cos(frames * 0.05 + k.phase) * 6;
-                        k.x += ((k.tX + windPullX + swayX) - k.x) * 0.12;
-                        k.y += ((k.tY + swayY) - k.y) * 0.12;
+                        k.tX = this.width/2 + 30 + (index * 45); k.tY = -this.height/2 - 20 - (index * 30);
+                        let windPullX = -this.vx * 3; let swayX = Math.sin(frames * 0.06 + k.phase) * 12; let swayY = Math.cos(frames * 0.05 + k.phase) * 6;
+                        k.x += ((k.tX + windPullX + swayX) - k.x) * 0.12; k.y += ((k.tY + swayY) - k.y) * 0.12;
                     });
 
-                    // Update UI 
                     acornDisplay.innerText = Math.max(0, Math.floor(acorns));
-                    let visualAlt = Math.floor(2500 - ((this.y / canvas.height) * 2000));
-                    altDisplay.innerText = visualAlt;
+                    altDisplay.innerText = Math.floor(2500 - ((this.y / canvas.height) * 2000));
                 }
 
                 draw(isNight) {
@@ -539,51 +265,29 @@
                     // --- DRAW TRAILING BIRD NOTES (The Diegetic Banner) ---
                     if (this.notes > 0) {
                         ctx.save();
-                        let stringLength = 80;
-                        let bannerX = -this.width/2 - stringLength;
-                        
-                        // Draw golden twine
-                        ctx.beginPath();
-                        ctx.moveTo(-this.width/2 + 10, 0); // Attach near tail
-                        ctx.lineTo(bannerX, 0);
-                        ctx.strokeStyle = "rgba(255, 215, 0, 0.8)";
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
+                        let stringLength = 80; let bannerX = -this.width/2 - stringLength;
+                        ctx.beginPath(); ctx.moveTo(-this.width/2 + 10, 0); ctx.lineTo(bannerX, 0);
+                        ctx.strokeStyle = "rgba(255, 215, 0, 0.8)"; ctx.lineWidth = 2; ctx.stroke();
 
-                        // Draw snapped notes
                         let spacing = stringLength / this.maxNotes;
                         for (let i = 0; i < this.notes; i++) {
                             let noteX = (-this.width/2 + 5) - (spacing * (i + 1));
-                            
-                            ctx.fillStyle = "rgba(255, 250, 240, 0.95)";
-                            ctx.fillRect(noteX - 10, -14, 20, 28);
-                            ctx.strokeStyle = "#d4a373";
-                            ctx.lineWidth = 1;
-                            ctx.strokeRect(noteX - 10, -14, 20, 28);
-                            
-                            ctx.fillStyle = "#000";
-                            ctx.font = "16px Arial";
-                            ctx.textAlign = "center";
-                            ctx.textBaseline = "middle";
-                            ctx.fillText("🎵", noteX, 0);
+                            ctx.fillStyle = "rgba(255, 250, 240, 0.95)"; ctx.fillRect(noteX - 10, -14, 20, 28);
+                            ctx.strokeStyle = "#d4a373"; ctx.lineWidth = 1; ctx.strokeRect(noteX - 10, -14, 20, 28);
+                            ctx.fillStyle = "#000"; ctx.font = "16px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🎵", noteX, 0);
                         }
                         ctx.restore();
                     }
-                    // --- END BANNER ---
 
                     // Balloons
                     ctx.save();
                     ctx.lineWidth = 1; ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-                    this.customBalloons.forEach(b => {
-                        ctx.beginPath(); ctx.moveTo(-this.width/4, -this.height/4); ctx.lineTo(b.x, b.y); ctx.stroke();
-                    });
+                    this.customBalloons.forEach(b => { ctx.beginPath(); ctx.moveTo(-this.width/4, -this.height/4); ctx.lineTo(b.x, b.y); ctx.stroke(); });
                     this.customBalloons.forEach(b => {
                         ctx.save(); ctx.translate(b.x, b.y); ctx.rotate((b.x - b.tX) * 0.02);
                         ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; ctx.shadowBlur = 15;
-                        ctx.font = "40px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                        ctx.fillText(b.emoji, 0, 0);
-                        ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-                        ctx.beginPath(); ctx.ellipse(-8, -12, 12, 6, Math.PI/5, 0, Math.PI*2); ctx.fill();
+                        ctx.font = "40px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.emoji, 0, 0);
+                        ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.beginPath(); ctx.ellipse(-8, -12, 12, 6, Math.PI/5, 0, Math.PI*2); ctx.fill();
                         ctx.restore();
                     });
                     ctx.restore();
@@ -591,33 +295,19 @@
                     // Kites
                     ctx.save();
                     this.kites.forEach(k => {
-                        ctx.beginPath(); ctx.moveTo(this.width/3, -this.height/6); ctx.lineTo(k.x, k.y);
-                        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
-
+                        ctx.beginPath(); ctx.moveTo(this.width/3, -this.height/6); ctx.lineTo(k.x, k.y); ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
                         ctx.save(); ctx.translate(k.x, k.y); ctx.rotate((k.x - k.tX) * 0.01 + 0.3);
 
                         // Tail
-                        ctx.beginPath(); ctx.moveTo(0, 5); ctx.quadraticCurveTo(-15, 15, -5, 25); ctx.quadraticCurveTo(10, 35, -10, 45);
-                        ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
-                        
+                        ctx.beginPath(); ctx.moveTo(0, 5); ctx.quadraticCurveTo(-15, 15, -5, 25); ctx.quadraticCurveTo(10, 35, -10, 45); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
                         ctx.fillStyle = '#fff';
-                        let drawBow = (bx, by) => {
-                            ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 3, by - 3); ctx.lineTo(bx - 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
-                            ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 3, by - 3); ctx.lineTo(bx + 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
-                        };
+                        const drawBow = (bx, by) => { ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 3, by - 3); ctx.lineTo(bx - 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 3, by - 3); ctx.lineTo(bx + 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke(); };
                         drawBow(-8, 18); drawBow(1, 32); drawBow(-5, 42);
 
                         ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
-                        if (k.type === 'diamond') {
-                            ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
-                            ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 12); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
-                        } else if (k.type === 'airplane') {
-                            ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, -8); ctx.lineTo(-5, 0); ctx.lineTo(-10, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
-                            ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-5, 0); ctx.stroke();
-                        } else if (k.type === 'crane') {
-                            ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(12, -8); ctx.lineTo(8, -2); ctx.lineTo(-5, -15); ctx.lineTo(-2, -2); ctx.lineTo(-12, -8); ctx.closePath(); ctx.fill(); ctx.stroke();
-                            ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(8, -2); ctx.moveTo(0, 5); ctx.lineTo(-2, -2); ctx.moveTo(0, 5); ctx.lineTo(-5, -15); ctx.stroke();
-                        }
+                        if (k.type === 'diamond') { ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 12); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
+                        } else if (k.type === 'airplane') { ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, -8); ctx.lineTo(-5, 0); ctx.lineTo(-10, 8); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-5, 0); ctx.stroke();
+                        } else if (k.type === 'crane') { ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(12, -8); ctx.lineTo(8, -2); ctx.lineTo(-5, -15); ctx.lineTo(-2, -2); ctx.lineTo(-12, -8); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0, 5); ctx.lineTo(8, -2); ctx.moveTo(0, 5); ctx.lineTo(-2, -2); ctx.moveTo(0, 5); ctx.lineTo(-5, -15); ctx.stroke(); }
                         ctx.restore();
                     });
                     ctx.restore();
@@ -625,609 +315,253 @@
                     // Ship Image (Flipped to face right)
                     ctx.save();
                     ctx.scale(-1, 1);
-                    if (shipLoaded) {
-                        ctx.drawImage(shipImg, -this.width/2, -this.height/2, this.width, this.height);
+                    if (shipObj.isLoaded) {
+                        ctx.drawImage(shipObj.img, -this.width/2, -this.height/2, this.width, this.height);
                     } else {
-                        ctx.fillStyle = '#A0522D';
-                        ctx.beginPath(); ctx.ellipse(0, 0, this.width/2.5, this.height/3, 0, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = '#A0522D'; ctx.beginPath(); ctx.ellipse(0, 0, this.width/2.5, this.height/3, 0, 0, Math.PI*2); ctx.fill();
                         ctx.font = `${this.height}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🐿️', 0, -this.height/1.5);
                     }
                     ctx.restore();
 
-                    // THE BLUE HOUR LANTERN
+                    // Lantern
                     if (isNight) {
-                        ctx.shadowColor = "rgba(255, 200, 50, 0.9)";
-                        ctx.shadowBlur = 30 + Math.sin(frames*0.1)*10; // Flicker
-                        ctx.fillStyle = "rgba(255, 230, 100, 0.9)";
-                        ctx.beginPath();
-                        ctx.arc(this.width/3, 10, 8, 0, Math.PI*2); // Hanging off the front
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
+                        ctx.shadowColor = "rgba(255, 200, 50, 0.9)"; ctx.shadowBlur = 30 + Math.sin(frames*0.1)*10;
+                        ctx.fillStyle = "rgba(255, 230, 100, 0.9)"; ctx.beginPath(); ctx.arc(this.width/3, 10, 8, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
                     }
-
                     ctx.restore();
                 }
             }
 
-            // The Acorn Collectibles
+            // Collectibles
             class GoldenAcorn {
                 constructor() {
-                    this.x = canvas.width + 50;
-                    this.y = Math.random() * (canvas.height - 200) + 100;
-                    this.size = 25;
-                    this.hitbox = { w: this.size * 1.5, h: this.size * 1.5 };
-                    this.bobPhase = Math.random() * Math.PI * 2;
+                    this.x = canvas.width + 50; this.y = Math.random() * (canvas.height - 200) + 100;
+                    this.size = 25; this.hitbox = { w: this.size * 1.5, h: this.size * 1.5 }; this.bobPhase = Math.random() * Math.PI * 2;
                 }
-                
-                update(positionRatio) { 
-                    let currentSpeed = gameSpeed * (1 + positionRatio); 
-                    this.x -= currentSpeed * 0.8; 
-                    this.y += Math.sin(frames * 0.05 + this.bobPhase) * 1.5; // Bobbing in wind
-                }
-                
+                update(positionRatio) { this.x -= (gameSpeed * (1 + positionRatio)) * 0.8; this.y += Math.sin(frames * 0.05 + this.bobPhase) * 1.5; }
                 draw() {
-                    ctx.save();
-                    ctx.translate(this.x, this.y);
-                    ctx.rotate(Math.sin(frames * 0.05 + this.bobPhase) * 0.2); // slight tilt
-                    
-                    // Golden Foil Glow
-                    ctx.shadowColor = "rgba(255, 215, 0, 0.8)";
-                    ctx.shadowBlur = 15;
-                    
-                    // Cap
-                    ctx.fillStyle = "#5c4033";
-                    ctx.beginPath();
-                    ctx.arc(0, -this.size/4, this.size/2, Math.PI, 0);
-                    ctx.fill();
-                    
-                    // Nut (Gold Foil)
-                    ctx.fillStyle = "#ffd700";
-                    ctx.beginPath();
-                    ctx.ellipse(0, this.size/4, this.size/2.2, this.size/1.8, 0, 0, Math.PI*2);
-                    ctx.fill();
-                    
-                    // Shimmer line
-                    ctx.shadowBlur = 0;
-                    ctx.strokeStyle = "rgba(255,255,255,0.6)";
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.arc(-this.size/4, this.size/4, this.size/3, Math.PI*0.8, Math.PI*1.2);
-                    ctx.stroke();
-
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(Math.sin(frames * 0.05 + this.bobPhase) * 0.2);
+                    ctx.shadowColor = "rgba(255, 215, 0, 0.8)"; ctx.shadowBlur = 15;
+                    ctx.fillStyle = "#5c4033"; ctx.beginPath(); ctx.arc(0, -this.size/4, this.size/2, Math.PI, 0); ctx.fill();
+                    ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.ellipse(0, this.size/4, this.size/2.2, this.size/1.8, 0, 0, Math.PI*2); ctx.fill();
+                    ctx.shadowBlur = 0; ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(-this.size/4, this.size/4, this.size/3, Math.PI*0.8, Math.PI*1.2); ctx.stroke();
                     ctx.restore();
                 }
             }
 
             class BirdNote {
                 constructor() {
-                    this.x = canvas.width + 50;
-                    this.y = Math.random() * (canvas.height - 200) + 100;
-                    this.size = 20;
-                    this.hitbox = { w: 30, h: 30 };
-                    this.bobPhase = Math.random() * Math.PI * 2;
+                    this.x = canvas.width + 50; this.y = Math.random() * (canvas.height - 200) + 100;
+                    this.size = 20; this.hitbox = { w: 30, h: 30 }; this.bobPhase = Math.random() * Math.PI * 2;
                 }
-                
-                update(positionRatio) { 
-                    let currentSpeed = gameSpeed * (1 + positionRatio); 
-                    this.x -= currentSpeed * 0.7; 
-                    this.y += Math.sin(frames * 0.04 + this.bobPhase) * 2; 
-                }
-                
+                update(positionRatio) { this.x -= (gameSpeed * (1 + positionRatio)) * 0.7; this.y += Math.sin(frames * 0.04 + this.bobPhase) * 2; }
                 draw() {
-                    ctx.save();
-                    ctx.translate(this.x, this.y);
-                    ctx.rotate(Math.sin(frames * 0.05 + this.bobPhase) * 0.2);
-                    
-                    ctx.fillStyle = "rgba(255, 250, 240, 0.9)";
-                    ctx.shadowColor = "rgba(0,0,0,0.3)";
-                    ctx.shadowBlur = 5;
-                    ctx.fillRect(-15, -15, 30, 30);
-                    ctx.strokeStyle = "#d4a373";
-                    ctx.strokeRect(-15, -15, 30, 30);
-                    
-                    ctx.shadowBlur = 0;
-                    ctx.fillStyle = "#000";
-                    ctx.font = "20px Arial";
-                    ctx.textAlign = "center";
-                    ctx.textBaseline = "middle";
-                    ctx.fillText("🎶", 0, 0);
-                    
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(Math.sin(frames * 0.05 + this.bobPhase) * 0.2);
+                    ctx.fillStyle = "rgba(255, 250, 240, 0.9)"; ctx.shadowColor = "rgba(0,0,0,0.3)"; ctx.shadowBlur = 5; ctx.fillRect(-15, -15, 30, 30);
+                    ctx.strokeStyle = "#d4a373"; ctx.strokeRect(-15, -15, 30, 30);
+                    ctx.shadowBlur = 0; ctx.fillStyle = "#000"; ctx.font = "20px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🎶", 0, 0);
                     ctx.restore();
                 }
             }
 
             class Particle {
                 constructor(x, y) {
-                    this.x = x; this.y = y;
-                    this.vx = -Math.random() * 2 - 1; this.vy = (Math.random() - 0.5) * 1;
-                    this.life = 1.0; this.decay = Math.random() * 0.02 + 0.02;
-                    this.size = Math.random() * 4 + 2;
+                    this.x = x; this.y = y; this.vx = -Math.random() * 2 - 1; this.vy = (Math.random() - 0.5) * 1;
+                    this.life = 1.0; this.decay = Math.random() * 0.02 + 0.02; this.size = Math.random() * 4 + 2;
                 }
-                update() {
-                    let positionRatio = Math.max(0, player ? player.x / (canvas.width * 0.5) : 0);
-                    this.x += this.vx - (gameSpeed * (1 + positionRatio)) * 0.5;
-                    this.y += this.vy;
-                    this.life -= this.decay;
-                }
-                draw() {
-                    ctx.fillStyle = `rgba(255, 215, 100, ${this.life * 0.8})`;
-                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill();
-                }
+                update() { this.x += this.vx - (gameSpeed * (1 + (player ? player.x / (canvas.width * 0.5) : 0))) * 0.5; this.y += this.vy; this.life -= this.decay; }
+                draw() { ctx.fillStyle = `rgba(255, 215, 100, ${this.life * 0.8})`; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); }
             }
 
-            // Foreground Parallax Trees
             function generateParallaxTrees() {
-                if (frames % 160 === 0) { 
-                    parallaxTrees.push({
-                        x: canvas.width + 50,
-                        w: 60 + Math.random()*80,
-                        h: 150 + Math.random()*200,
-                        type: Math.floor(Math.random() * 3)
-                    });
-                }
-
+                if (frames % 160 === 0) parallaxTrees.push({ x: canvas.width + 50, w: 60 + Math.random()*80, h: 150 + Math.random()*200 });
                 ctx.fillStyle = '#1a2421'; 
                 for (let i = parallaxTrees.length - 1; i >= 0; i--) {
-                    let t = parallaxTrees[i];
-                    let pRatio = player ? player.x / (canvas.width * 0.5) : 0;
-                    t.x -= gameSpeed * 0.8 * (1 + pRatio); 
-
-                    ctx.beginPath();
-                    ctx.moveTo(t.x, canvas.height); 
-                    ctx.lineTo(t.x - t.w/2, canvas.height); 
-                    
+                    let t = parallaxTrees[i]; t.x -= gameSpeed * 0.8 * (1 + (player ? player.x / (canvas.width * 0.5) : 0)); 
+                    ctx.beginPath(); ctx.moveTo(t.x, canvas.height); ctx.lineTo(t.x - t.w/2, canvas.height); 
                     let segments = 4;
-                    for(let s=1; s<=segments; s++) {
-                        let hStep = canvas.height - (t.h * (s/segments));
-                        let wStep = (t.w/2) * (1 - s/segments);
-                        ctx.lineTo(t.x - wStep, hStep + 20); 
-                        ctx.lineTo(t.x - (wStep*0.5), hStep); 
-                    }
+                    for(let s=1; s<=segments; s++) { let hs = canvas.height - (t.h * (s/segments)); let ws = (t.w/2) * (1 - s/segments); ctx.lineTo(t.x - ws, hs + 20); ctx.lineTo(t.x - (ws*0.5), hs); }
                     ctx.lineTo(t.x, canvas.height - t.h); 
-                    
-                    for(let s=segments-1; s>=0; s--) {
-                        let hStep = canvas.height - (t.h * (s/segments));
-                        let wStep = (t.w/2) * (1 - s/segments);
-                        ctx.lineTo(t.x + (wStep*0.5), hStep); 
-                        ctx.lineTo(t.x + wStep, hStep + 20); 
-                    }
-                    
-                    ctx.closePath();
-                    ctx.fill();
-
+                    for(let s=segments-1; s>=0; s--) { let hs = canvas.height - (t.h * (s/segments)); let ws = (t.w/2) * (1 - s/segments); ctx.lineTo(t.x + (ws*0.5), hs); ctx.lineTo(t.x + ws, hs + 20); }
+                    ctx.closePath(); ctx.fill();
                     if (t.x + t.w < 0) parallaxTrees.splice(i, 1);
                 }
             }
 
-            // Cooldown & Fuel UI Manager
             function triggerGlobalCooldown() {
-                if (actionCooldown) return;
-                actionCooldown = true;
-                let timeLeft = 2; 
-                
-                songBtn.classList.add('on-cooldown');
-                addBalloonBtn.classList.add('on-cooldown');
-                addKiteBtn.classList.add('on-cooldown');
-                
-                songBtn.innerHTML = `${timeLeft}<span class="cost-label">${player.notes}/${player.maxNotes} 🎶</span>`;
-                addBalloonBtn.innerHTML = `${timeLeft}<span class="cost-label">-10 🌰</span>`;
-                addKiteBtn.innerHTML = `${timeLeft}<span class="cost-label">-10 🌰</span>`;
-                
-                cooldownTimer = setInterval(() => {
-                    timeLeft--;
-                    if (timeLeft > 0) {
-                        songBtn.innerHTML = `${timeLeft}<span class="cost-label">${player.notes}/${player.maxNotes} 🎶</span>`;
-                        addBalloonBtn.innerHTML = `${timeLeft}<span class="cost-label">-10 🌰</span>`;
-                        addKiteBtn.innerHTML = `${timeLeft}<span class="cost-label">-10 🌰</span>`;
-                    } else {
-                        clearInterval(cooldownTimer);
-                        actionCooldown = false;
-                        updateButtonStates(); 
-                    }
-                }, 1000); 
+                if (actionCooldown) return; actionCooldown = true; let timeLeft = 2; 
+                songBtn.classList.add('on-cooldown'); addBalloonBtn.classList.add('on-cooldown'); addKiteBtn.classList.add('on-cooldown');
+                const setHtml = () => { songBtn.innerHTML = `${timeLeft}<span class="cost-label">${player.notes}/${player.maxNotes} 🎶</span>`; addBalloonBtn.innerHTML = `${timeLeft}<span class="cost-label">-10 🌰</span>`; addKiteBtn.innerHTML = `${timeLeft}<span class="cost-label">-10 🌰</span>`; };
+                setHtml();
+                cooldownTimer = setInterval(() => { timeLeft--; if (timeLeft > 0) setHtml(); else { clearInterval(cooldownTimer); actionCooldown = false; updateButtonStates(); } }, 1000); 
             }
 
             function updateButtonStates() {
                 if (actionCooldown) return; 
-
-                songBtn.innerHTML = `🎵<span class="cost-label">${player ? player.notes : 0}/${player ? player.maxNotes : 3} 🎶</span>`;
-                addBalloonBtn.innerHTML = `${currentFruitEmoji}<span class="cost-label">-10 🌰</span>`; 
-                addKiteBtn.innerHTML = `🪁<span class="cost-label">-10 🌰</span>`;
-
-                songBtn.classList.remove('on-cooldown');
-                addBalloonBtn.classList.remove('on-cooldown');
-                addKiteBtn.classList.remove('on-cooldown');
-
-                if (player && player.notes >= player.maxNotes) {
-                    songBtn.classList.remove('no-acorns');
-                    songBtn.classList.add('available');
-                } else {
-                    songBtn.classList.add('no-acorns');
-                    songBtn.classList.remove('available');
-                }
-                
+                songBtn.innerHTML = `🎵<span class="cost-label">${player ? player.notes : 0}/${player ? player.maxNotes : 3} 🎶</span>`; addBalloonBtn.innerHTML = `${currentFruitEmoji}<span class="cost-label">-10 🌰</span>`; addKiteBtn.innerHTML = `🪁<span class="cost-label">-10 🌰</span>`;
+                songBtn.classList.remove('on-cooldown'); addBalloonBtn.classList.remove('on-cooldown'); addKiteBtn.classList.remove('on-cooldown');
+                if (player && player.notes >= player.maxNotes) { songBtn.classList.remove('no-acorns'); songBtn.classList.add('available'); } else { songBtn.classList.add('no-acorns'); songBtn.classList.remove('available'); }
                 acorns < 10 ? addBalloonBtn.classList.add('no-acorns') : addBalloonBtn.classList.remove('no-acorns');
                 acorns < 10 ? addKiteBtn.classList.add('no-acorns') : addKiteBtn.classList.remove('no-acorns');
             }
 
             function initGame() {
                 if (menuAnimationId) cancelAnimationFrame(menuAnimationId);
-
-                let pName = setupNameInput.value.trim() || "Captain Acorn";
-                pilotDisplay.innerText = pName;
-
-                let fruitName = setupFruitInput.value.trim() || "strawberry";
-                currentFruitEmoji = getFruitEmoji(fruitName);
-                
-                player = new Player();
-                player.addBalloon(currentFruitEmoji); 
-                player.addKite(); 
-
-                collectibles = []; 
-                particles = []; 
-                parallaxTrees = [];
-                frames = 0;
-                acorns = 50; 
-                gameSpeed = 1; 
-                currentState = STATE.PLAYING;
-                verticalThrust = 0; 
-                
-                startScreen.classList.add('hidden');
-                hud.classList.remove('hidden');
-                bottomBar.classList.remove('hidden');
-                controlsHint.classList.remove('hidden');
-                
-                if (cooldownTimer) clearInterval(cooldownTimer);
-                actionCooldown = false;
-                
-                currentZoom = 1.05;
-                targetZoom = 1.05;
-
-                updateButtonStates();
-                
+                pilotDisplay.innerText = setupNameInput.value.trim() || "Captain Acorn";
+                currentFruitEmoji = getFruitEmoji(setupFruitInput.value.trim() || "strawberry");
+                player = new Player(); player.addBalloon(currentFruitEmoji); player.addKite(); 
+                collectibles = []; particles = []; parallaxTrees = []; frames = 0; acorns = 50; gameSpeed = 1; currentState = STATE.PLAYING; verticalThrust = 0; 
+                startScreen.classList.add('hidden'); hud.classList.remove('hidden'); bottomBar.classList.remove('hidden'); controlsHint.classList.remove('hidden');
+                if (cooldownTimer) clearInterval(cooldownTimer); actionCooldown = false;
+                currentZoom = 1.05; targetZoom = 1.05; updateButtonStates();
                 animate();
             }
 
-            // Controls logic (Toggle system: Top Half Up / Bottom Half Down)
             function toggleThrust(e) { 
-                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button' || e.target.classList.contains('action-btn') || e.target.closest('.action-btn')) return; 
+                if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'button' || e.target.closest('.action-btn')) return; 
                 if (document.activeElement === setupNameInput || document.activeElement === setupFruitInput) return;
-                
                 if (currentState === STATE.PLAYING) {
                     if (e.cancelable) e.preventDefault();
-
                     if (e.type === 'keydown') {
                         if (e.repeat) return; 
-                        if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') {
-                            verticalThrust = (verticalThrust === -1) ? 0 : -1;
-                        } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-                            verticalThrust = (verticalThrust === 1) ? 0 : 1;
-                        }
+                        if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') verticalThrust = (verticalThrust === -1) ? 0 : -1;
+                        else if (e.code === 'ArrowDown' || e.code === 'KeyS') verticalThrust = (verticalThrust === 1) ? 0 : 1;
                         return;
                     }
-
                     let yPos = canvas.height / 2;
                     if (e.type.includes('mouse')) yPos = e.clientY;
                     if (e.type.includes('touch') && e.touches.length > 0) yPos = e.touches[0].clientY;
-
-                    if (yPos < canvas.height / 2) {
-                        verticalThrust = (verticalThrust === -1) ? 0 : -1; // Toggle Up
-                    } else {
-                        verticalThrust = (verticalThrust === 1) ? 0 : 1;   // Toggle Down
-                    }
+                    verticalThrust = (yPos < canvas.height / 2) ? ((verticalThrust === -1) ? 0 : -1) : ((verticalThrust === 1) ? 0 : 1);
                 }
             }
 
-            // Action Buttons
             function triggerSong(e) {
                 e.stopPropagation(); 
                 if (actionCooldown || !player || player.notes < player.maxNotes) return; 
-
-                // Ultimate Ability: The Dawn Chorus / Shockwave
-                player.notes = 0; 
-                
-                // CAMERA SHOCKWAVE EFFECT - Massive punch in!
-                currentZoom = 1.4;
-
-                // Visual Flash & Particle Shockwave
-                for(let i=0; i<30; i++) {
-                    let p = new Particle(player.x + player.width/2, player.y + player.height/2);
-                    p.vx = (Math.random() - 0.5) * 15;
-                    p.vy = (Math.random() - 0.5) * 15;
-                    p.size = Math.random() * 8 + 4;
-                    p.life = 2.0; 
-                    particles.push(p);
-                }
-                
-                canvas.style.filter = 'brightness(2) contrast(1.2)';
-                setTimeout(() => canvas.style.filter = 'sepia(0.15) contrast(1.05) brightness(1.05)', 250);
-
-                triggerGlobalCooldown();
-                updateButtonStates(); 
+                player.notes = 0; currentZoom = 1.4;
+                for(let i=0; i<30; i++) { let p = new Particle(player.x + player.width/2, player.y + player.height/2); p.vx = (Math.random() - 0.5) * 15; p.vy = (Math.random() - 0.5) * 15; p.size = Math.random() * 8 + 4; p.life = 2.0; particles.push(p); }
+                canvas.style.filter = 'brightness(2) contrast(1.2)'; setTimeout(() => canvas.style.filter = 'sepia(0.15) contrast(1.05) brightness(1.05)', 250);
+                triggerGlobalCooldown(); updateButtonStates(); 
             }
             
-            function tieBalloon(e) {
-                e.stopPropagation();
-                if (actionCooldown || acorns < 10) return; 
+            function tieBalloon(e) { e.stopPropagation(); if (actionCooldown || acorns < 10) return; if (currentFruitEmoji && player) { acorns -= 10; player.addBalloon(currentFruitEmoji); triggerGlobalCooldown(); } }
+            function deployOrigamiKite(e) { e.stopPropagation(); if (actionCooldown || acorns < 10) return; if (player) { acorns -= 10; player.addKite(); triggerGlobalCooldown(); } }
 
-                if (currentFruitEmoji && player) {
-                    acorns -= 10;
-                    player.addBalloon(currentFruitEmoji);
-                    triggerGlobalCooldown();
-                }
-            }
-            
-            function deployOrigamiKite(e) {
-                e.stopPropagation();
-                if (actionCooldown || acorns < 10) return; 
-
-                if (player) {
-                    acorns -= 10;
-                    player.addKite();
-                    triggerGlobalCooldown();
-                }
-            }
-
-            const inputsToIgnore = [setupNameInput, setupFruitInput];
-            inputsToIgnore.forEach(input => {
-                input.addEventListener('keydown', e => e.stopPropagation());
-                input.addEventListener('keyup', e => e.stopPropagation());
-                input.addEventListener('mousedown', e => e.stopPropagation());
-                input.addEventListener('touchstart', e => e.stopPropagation());
-            });
-
-            // Event Listeners
-            window.addEventListener('mousedown', toggleThrust);
-            window.addEventListener('touchstart', toggleThrust, {passive: false});
-            window.addEventListener('keydown', toggleThrust);
-
+            [setupNameInput, setupFruitInput].forEach(input => { ['keydown', 'keyup', 'mousedown', 'touchstart'].forEach(evt => input.addEventListener(evt, e => e.stopPropagation())); });
+            window.addEventListener('mousedown', toggleThrust); window.addEventListener('touchstart', toggleThrust, {passive: false}); window.addEventListener('keydown', toggleThrust);
             startBtn.addEventListener('click', (e) => { e.stopPropagation(); initGame(); });
-            
-            songBtn.addEventListener('click', triggerSong);
-            songBtn.addEventListener('touchstart', triggerSong, {passive: false});
-            addBalloonBtn.addEventListener('click', tieBalloon);
-            addBalloonBtn.addEventListener('touchstart', tieBalloon, {passive: false});
-            addKiteBtn.addEventListener('click', deployOrigamiKite);
-            addKiteBtn.addEventListener('touchstart', deployOrigamiKite, {passive: false});
+            songBtn.addEventListener('click', triggerSong); songBtn.addEventListener('touchstart', triggerSong, {passive: false});
+            addBalloonBtn.addEventListener('click', tieBalloon); addBalloonBtn.addEventListener('touchstart', tieBalloon, {passive: false});
+            addKiteBtn.addEventListener('click', deployOrigamiKite); addKiteBtn.addEventListener('touchstart', deployOrigamiKite, {passive: false});
 
-            // MENU SCENE ANIMATION
             function menuAnimate() {
                 if (currentState !== STATE.MENU) return;
                 menuAnimationId = requestAnimationFrame(menuAnimate);
-
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // Subtle menu camera breathing
                 let menuZoom = 1.05 + Math.sin(frames * 0.02) * 0.02;
-                ctx.save();
-                ctx.translate(canvas.width/2, canvas.height/2);
-                ctx.scale(menuZoom, menuZoom);
-                ctx.translate(-canvas.width/2, -canvas.height/2);
+                ctx.save(); ctx.translate(canvas.width/2, canvas.height/2); ctx.scale(menuZoom, menuZoom); ctx.translate(-canvas.width/2, -canvas.height/2);
 
-                if (bgLoaded) {
-                    let scale = canvas.height / bgImg.naturalHeight;
-                    let scaledWidth = bgImg.naturalWidth * scale;
-                    // Draw extra copies to cover edges during camera zoom
-                    let copies = Math.ceil(canvas.width / scaledWidth) + 2;
-                    for(let i = -1; i < copies; i++) {
-                        ctx.drawImage(bgImg, bgX + (i * scaledWidth), 0, scaledWidth, canvas.height);
-                    }
-                    bgX -= 0.0375; 
-                    if (bgX <= -scaledWidth) bgX += scaledWidth;
+                if (loop5Obj.isLoaded) {
+                    let scale = canvas.height / loop5Obj.img.naturalHeight; let scaledWidth = loop5Obj.img.naturalWidth * scale;
+                    for(let i = -1; i < Math.ceil(canvas.width / scaledWidth) + 2; i++) ctx.drawImage(loop5Obj.img, bgX + (i * scaledWidth), 0, scaledWidth, canvas.height);
+                    bgX -= 0.0375; if (bgX <= -scaledWidth) bgX += scaledWidth;
                 }
 
                 generateParallaxTrees(); 
 
-                let towerX = canvas.width * 0.2;
-                let towerY = canvas.height - 50;
-                let towerHeight = Math.min(canvas.height * 0.4, 250);
-                let towerWidth = 50;
-                let shipW = 80;
-                let shipH = 60;
-                let shipX = towerX + 120;
-                let shipY = towerY - towerHeight; 
-                
-                shipY += Math.sin(frames * 0.05) * 8;
+                let towerX = canvas.width * 0.2; let towerY = canvas.height - 50; let towerHeight = Math.min(canvas.height * 0.4, 250); let towerWidth = 50;
+                let shipW = 80; let shipH = 60; let shipX = towerX + 120; let shipY = towerY - towerHeight + (Math.sin(frames * 0.05) * 8); 
 
-                ctx.save();
-                ctx.strokeStyle = '#5c4033'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-                ctx.beginPath(); ctx.moveTo(towerX - towerWidth/2, towerY); ctx.lineTo(towerX - towerWidth/4, towerY - towerHeight);
-                ctx.moveTo(towerX + towerWidth/2, towerY); ctx.lineTo(towerX + towerWidth/4, towerY - towerHeight); ctx.stroke();
-
+                ctx.save(); ctx.strokeStyle = '#5c4033'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(towerX - towerWidth/2, towerY); ctx.lineTo(towerX - towerWidth/4, towerY - towerHeight); ctx.moveTo(towerX + towerWidth/2, towerY); ctx.lineTo(towerX + towerWidth/4, towerY - towerHeight); ctx.stroke();
                 ctx.lineWidth = 2; ctx.beginPath();
-                let sections = 4;
-                for(let i=0; i<sections; i++) {
-                    let y1 = towerY - (towerHeight/sections)*i;
-                    let y2 = towerY - (towerHeight/sections)*(i+1);
-                    let w1 = towerWidth/2 - (towerWidth/4)*(i/sections);
-                    let w2 = towerWidth/2 - (towerWidth/4)*((i+1)/sections);
-                    ctx.moveTo(towerX - w1, y1); ctx.lineTo(towerX + w2, y2); ctx.moveTo(towerX + w1, y1); ctx.lineTo(towerX - w2, y2);
-                }
-                ctx.stroke();
+                for(let i=0; i<4; i++) { let y1 = towerY - (towerHeight/4)*i; let y2 = towerY - (towerHeight/4)*(i+1); let w1 = towerWidth/2 - (towerWidth/4)*(i/4); let w2 = towerWidth/2 - (towerWidth/4)*((i+1)/4); ctx.moveTo(towerX - w1, y1); ctx.lineTo(towerX + w2, y2); ctx.moveTo(towerX + w1, y1); ctx.lineTo(towerX - w2, y2); }
+                ctx.stroke(); ctx.fillStyle = '#8b5a2b'; ctx.fillRect(towerX - towerWidth*0.8, towerY - towerHeight - 20, towerWidth*1.6, 20); ctx.fillRect(towerX - towerWidth*0.5, towerY - towerHeight - 40, towerWidth, 20); ctx.restore();
 
-                ctx.fillStyle = '#8b5a2b';
-                ctx.fillRect(towerX - towerWidth*0.8, towerY - towerHeight - 20, towerWidth*1.6, 20);
-                ctx.fillRect(towerX - towerWidth*0.5, towerY - towerHeight - 40, towerWidth, 20);
-                ctx.restore();
+                ctx.save(); ctx.beginPath(); ctx.moveTo(towerX, towerY - towerHeight - 10); ctx.quadraticCurveTo(towerX + 50, shipY + 20, shipX - shipW/2, shipY); ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
 
+                let previewEmoji = getFruitEmoji(setupFruitInput.value.trim() || "strawberry");
                 ctx.save();
-                ctx.beginPath(); ctx.moveTo(towerX, towerY - towerHeight - 10);
-                ctx.quadraticCurveTo(towerX + 50, shipY + 20, shipX - shipW/2, shipY);
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 2; ctx.stroke();
+                let sway = Math.sin(frames * 0.04) * 15; let bX = shipX - 10 + sway; let bY = shipY - 50 - Math.abs(Math.cos(frames*0.05)*10);
+                ctx.beginPath(); ctx.moveTo(shipX, shipY - shipH/4); ctx.lineTo(bX, bY); ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
+                ctx.translate(bX, bY); ctx.rotate((bX - shipX) * 0.01);
+                ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; ctx.shadowBlur = 15; ctx.font = "35px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(previewEmoji, 0, 0);
+                ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.beginPath(); ctx.ellipse(-6, -10, 8, 4, Math.PI/5, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
 
-                let liveFruitInput = setupFruitInput.value.trim() || "strawberry";
-                let previewEmoji = getFruitEmoji(liveFruitInput);
-                let previewEmojis = [previewEmoji]; 
-                
-                ctx.save();
-                previewEmojis.forEach((emoji, i) => {
-                    let sway = Math.sin(frames * 0.04 + i) * 15;
-                    let bX = shipX - 10 + (i * 20) + sway;
-                    let bY = shipY - 50 - Math.abs(Math.cos(frames*0.05 + i)*10);
-                    
-                    ctx.beginPath(); ctx.moveTo(shipX, shipY - shipH/4); ctx.lineTo(bX, bY);
-                    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
-                    ctx.translate(bX, bY); ctx.rotate((bX - shipX) * 0.01);
-
-                    ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; ctx.shadowBlur = 15;
-                    ctx.font = "35px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(emoji, 0, 0);
-
-                    ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-                    ctx.beginPath(); ctx.ellipse(-6, -10, 8, 4, Math.PI/5, 0, Math.PI*2); ctx.fill();
-
-                    ctx.rotate(-(bX - shipX) * 0.01); ctx.translate(-bX, -bY);
-                });
+                ctx.save(); ctx.translate(shipX, shipY); ctx.scale(-1, 1);
+                if (shipObj.isLoaded) ctx.drawImage(shipObj.img, -shipW/2, -shipH/2, shipW, shipH);
+                else { ctx.fillStyle = '#A0522D'; ctx.beginPath(); ctx.ellipse(0, 0, shipW/2.5, shipH/3, 0, 0, Math.PI*2); ctx.fill(); ctx.font = `${shipH}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🐿️', 0, -shipH/1.5); }
                 ctx.restore();
 
-                ctx.save();
-                let kSway = Math.sin(frames * 0.03) * 10;
-                let kX = shipX + 50 + kSway;
-                let kY = shipY - 60 - Math.abs(Math.cos(frames*0.04)*10);
-                
-                ctx.beginPath(); ctx.moveTo(shipX + shipW/3, shipY - shipH/6); ctx.lineTo(kX, kY);
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
-
-                ctx.translate(kX, kY); ctx.rotate((kX - shipX) * 0.01 + 0.3);
-
-                ctx.beginPath(); ctx.moveTo(0, 5); ctx.quadraticCurveTo(-15, 15, -5, 25); ctx.quadraticCurveTo(10, 35, -10, 45);
-                ctx.strokeStyle = '#000000'; ctx.lineWidth = 1; ctx.stroke();
-                
-                ctx.fillStyle = '#ffffff';
-                let drawBowMenu = (bx, by) => {
-                    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 3, by - 3); ctx.lineTo(bx - 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 3, by - 3); ctx.lineTo(bx + 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke();
-                };
-                drawBowMenu(-8, 18); drawBowMenu(1, 32); drawBowMenu(-5, 42);
-
-                ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000'; ctx.lineWidth = 1.5;
-                ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 12); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
-                ctx.restore();
-
-                ctx.save();
-                ctx.translate(shipX, shipY);
-                ctx.scale(-1, 1);
-                
-                if (shipLoaded) {
-                    ctx.drawImage(shipImg, -shipW/2, -shipH/2, shipW, shipH);
-                } else {
-                    ctx.fillStyle = '#A0522D';
-                    ctx.beginPath(); ctx.ellipse(0, 0, shipW/2.5, shipH/3, 0, 0, Math.PI*2); ctx.fill();
-                    ctx.font = `${shipH}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🐿️', 0, -shipH/1.5);
-                }
-                ctx.restore();
-
-                ctx.restore(); // Restore Menu Zoom
+                ctx.restore(); 
                 frames++;
             }
 
-            // MAIN GAME ANIMATION
             function animate() {
                 if(currentState !== STATE.PLAYING) return;
                 animationId = requestAnimationFrame(animate);
-
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 let dayCycleProgress = (Math.sin(frames * 0.001) + 1) / 2; 
                 let isNight = dayCycleProgress > 0.6; 
+                let nightOpacity = Math.max(0, Math.min(1, (dayCycleProgress - 0.4) * 2.5));
 
-                if (isNight) {
-                    vibeOverlay.style.background = `radial-gradient(circle at 70% 30%, rgba(10, 20, 50, 0.7) 0%, rgba(5, 10, 25, 0.9) 100%)`;
-                } else {
-                    vibeOverlay.style.background = `radial-gradient(circle at 70% 30%, rgba(255, 215, 120, 0.25) 0%, rgba(50, 70, 50, 0.4) 100%)`;
-                }
+                vibeOverlay.style.background = isNight ? `radial-gradient(circle at 70% 30%, rgba(10, 20, 50, 0.7) 0%, rgba(5, 10, 25, 0.9) 100%)` : `radial-gradient(circle at 70% 30%, rgba(255, 215, 120, 0.25) 0%, rgba(50, 70, 50, 0.4) 100%)`;
 
-                // DYNAMIC ALTITUDE CAMERA LOGIC
-                let altitudeRatio = player.y / canvas.height; // 0 (top) to 1 (bottom)
-                // Zooms in tighter when low to the trees, zooms out wide when high in the sky. Also continuously breathes.
-                targetZoom = 1.05 + (altitudeRatio * 0.15) + (Math.sin(frames * 0.02) * 0.02);
+                targetZoom = 1.05 + ((player.y / canvas.height) * 0.15) + (Math.sin(frames * 0.02) * 0.02);
                 currentZoom += (targetZoom - currentZoom) * 0.05;
 
-                ctx.save(); // Save context state for dynamic camera
+                ctx.save(); 
+                ctx.translate(player.x + player.width, player.y + player.height / 2); ctx.scale(currentZoom, currentZoom); ctx.translate(-(player.x + player.width), -(player.y + player.height / 2));
 
-                // Set focus point slightly ahead of the player
-                let focusX = player.x + player.width;
-                let focusY = player.y + player.height / 2;
-                ctx.translate(focusX, focusY);
-                ctx.scale(currentZoom, currentZoom);
-                ctx.translate(-focusX, -focusY);
+                let positionRatio = Math.max(0, player.x / (canvas.width * 0.5));
+                let cycleCount = Math.floor((frames * 0.001) / (Math.PI * 2));
+                
+                let dayImages = [loop2Obj, loop3Obj, loop4Obj, loop6Obj, loop7Obj];
+                let currentDayObj = dayImages[Math.min(cycleCount, dayImages.length - 1)];
+                if (!currentDayObj.isLoaded && loop2Obj.isLoaded) currentDayObj = loop2Obj; // Fallback
 
-                let maxX = canvas.width * 0.5;
-                let positionRatio = Math.max(0, player.x / maxX);
-
-                // 1. Draw Background Image
                 let currentBgSpeed = gameSpeed * 0.15 * (1 + positionRatio); 
-                if (bgLoaded) {
-                    let scale = canvas.height / bgImg.naturalHeight;
-                    let scaledWidth = bgImg.naturalWidth * scale;
-                    // Draw extra copies to cover edges during camera zoom out
-                    let copies = Math.ceil(canvas.width / scaledWidth) + 2;
-                    for(let i = -1; i < copies; i++) {
-                        ctx.drawImage(bgImg, bgX + (i * scaledWidth), 0, scaledWidth, canvas.height);
-                    }
-                    bgX -= currentBgSpeed;
-                    if (bgX <= -scaledWidth) bgX += scaledWidth;
+                let scaledWidth = 0;
+                
+                if (currentDayObj.isLoaded) {
+                    let scale = canvas.height / currentDayObj.img.naturalHeight; scaledWidth = currentDayObj.img.naturalWidth * scale;
+                    for(let i = -1; i < Math.ceil(canvas.width / scaledWidth) + 2; i++) ctx.drawImage(currentDayObj.img, bgX + (i * scaledWidth), 0, scaledWidth, canvas.height);
                 }
 
-                // 2. Draw Foreground Parallax Trees
+                if (nightBgObj.isLoaded && nightOpacity > 0) {
+                    ctx.save(); ctx.globalAlpha = nightOpacity;
+                    let scaleNight = canvas.height / nightBgObj.img.naturalHeight; let scaledWidthNight = nightBgObj.img.naturalWidth * scaleNight;
+                    for(let i = -1; i < Math.ceil(canvas.width / scaledWidthNight) + 2; i++) ctx.drawImage(nightBgObj.img, bgX + (i * scaledWidthNight), 0, scaledWidthNight, canvas.height);
+                    ctx.restore();
+                }
+
+                bgX -= currentBgSpeed; if (scaledWidth > 0 && bgX <= -scaledWidth) bgX += scaledWidth;
+
                 generateParallaxTrees();
+                player.update(isNight); player.draw(isNight);
 
-                // 3. Update & Draw Ship
-                player.update(isNight);
-                player.draw(isNight);
-
-                // 4. Update UI Buttons & Economy
                 if (frames % 10 === 0) updateButtonStates();
-
-                // 5. Spawn & Handle Collectibles!
-                if (frames % 360 === 0) { 
-                    if (Math.random() < 0.7) collectibles.push(new GoldenAcorn());
-                    else collectibles.push(new BirdNote());
-                }
+                if (frames % 360 === 0) { if (Math.random() < 0.7) collectibles.push(new GoldenAcorn()); else collectibles.push(new BirdNote()); }
 
                 for (let i = collectibles.length - 1; i >= 0; i--) {
-                    let item = collectibles[i];
-                    item.update(positionRatio);
-                    item.draw();
-
-                    // Collision Check
-                    let pRect = { x: player.x + player.hitbox.offsetX, y: player.y + player.hitbox.offsetY, w: player.hitbox.w, h: player.hitbox.h };
-                    let cRect = { x: item.x - item.hitbox.w/2, y: item.y - item.hitbox.h/2, w: item.hitbox.w, h: item.hitbox.h };
-
-                    if (pRect.x < cRect.x + cRect.w && pRect.x + pRect.w > cRect.x && pRect.y < cRect.y + cRect.h && pRect.y + pRect.h > cRect.y) {
-                        if (item instanceof GoldenAcorn) {
-                            acorns += 15; // Refuel!
-                        } else if (item instanceof BirdNote) {
-                            if (player.notes < player.maxNotes) {
-                                player.notes++;
-                                updateButtonStates();
-                            }
-                        }
-                        
+                    let item = collectibles[i]; item.update(positionRatio); item.draw();
+                    if (player.x + player.hitbox.offsetX < item.x - item.hitbox.w/2 + item.hitbox.w && player.x + player.hitbox.offsetX + player.hitbox.w > item.x - item.hitbox.w/2 && player.y + player.hitbox.offsetY < item.y - item.hitbox.h/2 + item.hitbox.h && player.y + player.hitbox.offsetY + player.hitbox.h > item.y - item.hitbox.h/2) {
+                        if (item instanceof GoldenAcorn) acorns += 15; 
+                        else if (item instanceof BirdNote && player.notes < player.maxNotes) { player.notes++; updateButtonStates(); }
                         collectibles.splice(i, 1);
-                        
-                        // Explosion effect
                         for(let j=0; j<5; j++) particles.push(new Particle(player.x + player.width/2, player.y + player.height/2));
                         continue;
                     }
-
                     if (item.x + item.size < 0) collectibles.splice(i, 1);
                 }
 
-                for (let i = particles.length - 1; i >= 0; i--) {
-                    particles[i].update();
-                    particles[i].draw();
-                    if (particles[i].life <= 0) particles.splice(i, 1);
-                }
+                for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); particles[i].draw(); if (particles[i].life <= 0) particles.splice(i, 1); }
+                ctx.restore(); 
 
-                ctx.restore(); // Restore context state (End of dynamic camera)
-
-                // Passive peaceful speed increase
-                if (frames > 0 && frames % 2400 === 0) {
-                    gameSpeed += 0.025; 
-                }
-
+                if (frames > 0 && frames % 2400 === 0) gameSpeed += 0.025; 
                 frames++;
             }
 

@@ -6,6 +6,7 @@
     <title>The 46 Peaks Aviator</title>
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
+        /* CORE LAYOUT */
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body, html { height: 100%; width: 100%; overflow: hidden; background-color: #3e4a3d; font-family: 'Lora', serif; }
         #game-container { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #e8dcc8; }
@@ -312,9 +313,8 @@
                     });
                     ctx.restore();
 
-                    // Ship Image (Flipped to face right)
+                    // Ship Image (Facing forward natively)
                     ctx.save();
-                    ctx.scale(-1, 1);
                     if (shipObj.isLoaded) {
                         ctx.drawImage(shipObj.img, -this.width/2, -this.height/2, this.width, this.height);
                     } else {
@@ -482,15 +482,36 @@
                 ctx.save(); ctx.beginPath(); ctx.moveTo(towerX, towerY - towerHeight - 10); ctx.quadraticCurveTo(towerX + 50, shipY + 20, shipX - shipW/2, shipY); ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
 
                 let previewEmoji = getFruitEmoji(setupFruitInput.value.trim() || "strawberry");
+                
+                // Draw Menu Balloon
                 ctx.save();
                 let sway = Math.sin(frames * 0.04) * 15; let bX = shipX - 10 + sway; let bY = shipY - 50 - Math.abs(Math.cos(frames*0.05)*10);
-                ctx.beginPath(); ctx.moveTo(shipX, shipY - shipH/4); ctx.lineTo(bX, bY); ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(shipX, shipY - shipH/4); ctx.lineTo(bX, bY);
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
                 ctx.translate(bX, bY); ctx.rotate((bX - shipX) * 0.01);
-                ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; ctx.shadowBlur = 15; ctx.font = "35px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(previewEmoji, 0, 0);
-                ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; ctx.beginPath(); ctx.ellipse(-6, -10, 8, 4, Math.PI/5, 0, Math.PI*2); ctx.fill();
+                ctx.shadowColor = "rgba(255, 255, 255, 0.8)"; ctx.shadowBlur = 15;
+                ctx.font = "35px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(previewEmoji, 0, 0);
+                ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                ctx.beginPath(); ctx.ellipse(-6, -10, 8, 4, Math.PI/5, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
 
-                ctx.save(); ctx.translate(shipX, shipY); ctx.scale(-1, 1);
+                // Draw Menu Kite
+                ctx.save();
+                let kSway = Math.sin(frames * 0.03) * 10; let kX = shipX + 50 + kSway; let kY = shipY - 60 - Math.abs(Math.cos(frames*0.04)*10);
+                ctx.beginPath(); ctx.moveTo(shipX + shipW/3, shipY - shipH/6); ctx.lineTo(kX, kY);
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.6)"; ctx.lineWidth = 1; ctx.stroke();
+                ctx.translate(kX, kY); ctx.rotate((kX - shipX) * 0.01 + 0.3);
+                ctx.beginPath(); ctx.moveTo(0, 5); ctx.quadraticCurveTo(-15, 15, -5, 25); ctx.quadraticCurveTo(10, 35, -10, 45); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.fillStyle = '#fff';
+                const drawBowMenu = (bx, by) => { ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 3, by - 3); ctx.lineTo(bx - 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 3, by - 3); ctx.lineTo(bx + 3, by + 3); ctx.closePath(); ctx.fill(); ctx.stroke(); };
+                drawBowMenu(-8, 18); drawBowMenu(1, 32); drawBowMenu(-5, 42);
+                ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(8, 0); ctx.lineTo(0, 12); ctx.lineTo(-8, 0); ctx.closePath(); ctx.fill(); ctx.stroke(); 
+                ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 12); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
+                ctx.restore();
+
+                // Draw Ship
+                ctx.save(); ctx.translate(shipX, shipY);
                 if (shipObj.isLoaded) ctx.drawImage(shipObj.img, -shipW/2, -shipH/2, shipW, shipH);
                 else { ctx.fillStyle = '#A0522D'; ctx.beginPath(); ctx.ellipse(0, 0, shipW/2.5, shipH/3, 0, 0, Math.PI*2); ctx.fill(); ctx.font = `${shipH}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('🐿️', 0, -shipH/1.5); }
                 ctx.restore();
